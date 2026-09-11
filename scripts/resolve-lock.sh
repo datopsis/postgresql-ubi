@@ -22,6 +22,8 @@ rpm --import "${input_dir}"/keys/*
 rpm --checksig "${input_dir}"/rpms/*.rpm
 
 mkdir -p /tmp/resolve-root
+rpm --root /tmp/resolve-root --initdb
+rpm --root /tmp/resolve-root --import "${input_dir}"/keys/*
 dnf install -y \
     --downloadonly \
     --downloaddir="${output_dir}/rpms" \
