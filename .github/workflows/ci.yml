@@ -119,18 +119,22 @@ jobs:
 
       - name: Prove acquisition material is absent from the final image
         run: |
-          test -z "$(docker history --no-trunc --format '{{.CreatedBy}}' "${TEST_IMAGE}" | grep -E 'https?://|RPM-GPG-KEY|/tmp/artifacts' || true)"
+          if docker history --no-trunc --format '{{.CreatedBy}}' "${TEST_IMAGE}" | grep -E 'https?://|RPM-GPG-KEY|/tmp/artifacts'; then
+            echo 'forbidden acquisition material found in final image history' >&2
+            exit 1
+          fi
           docker run --rm --entrypoint /bin/sh "${TEST_IMAGE}" -ec '
-            test ! -e /etc/dnf
-            test ! -e /etc/pki/entitlement
-            test ! -e /etc/pki/rpm-gpg
-            test ! -e /etc/rhsm
-            test ! -e /etc/yum.repos.d
-            test ! -e /var/cache/dnf
-            test ! -e /var/cache/yum
-            test -z "$(find / -xdev -type f \( -name "*RPM-GPG-KEY*" -o -name "*.repo" \) -print -quit)"
-            test -z "$(find / -xdev -type f -perm /6000 -print -quit)"
-            test -z "$(find / -xdev -type f -perm -0002 -print -quit)"
+            for path in /etc/dnf /etc/pki/entitlement /etc/pki/rpm-gpg /etc/rhsm /etc/yum.repos.d /var/cache/dnf /var/cache/yum; do
+              if test -e "${path}"; then
+                echo "forbidden final-image path: ${path}" >&2
+                exit 1
+              fi
+            done
+            if find / -xdev -type f \( -name "*RPM-GPG-KEY*" -o -name "*.repo" -o -perm /6000 -o -perm -0002 \) -print -quit | grep -q .; then
+              echo "forbidden key, repository, privilege, or writable file found" >&2
+              find / -xdev -type f \( -name "*RPM-GPG-KEY*" -o -name "*.repo" -o -perm /6000 -o -perm -0002 \) -print >&2
+              exit 1
+            fi
           '
 
       - name: Confirm loaded image architecture
@@ -164,6 +168,12 @@ jobs:
           syft-version: v1.51.1
           upload-artifact: false
           upload-release-assets: false
+
+      - name: Prove acquisition material is absent from the SBOM
+        run: >-
+          test -z "$(grep -E
+          'download[.]postgresql[.]org|dnf-srpms[.]postgresql[.]org|cdn-ubi[.]redhat[.]com|security[.]access[.]redhat[.]com|RPM-GPG-KEY|[.]artifact-bundle|/tmp/artifacts'
+          "${SBOM_FILE}" || true)"
 
       - name: Scan Syft SBOM with Grype
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
