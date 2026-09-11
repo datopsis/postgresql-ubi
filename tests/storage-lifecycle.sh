@@ -247,6 +247,18 @@ wait_failed "${second}" 'initialization is already running'
 
 interrupted_restart="${prefix}-interrupted-restart"
 run_database "${interrupted_restart}" "${concurrent_volume}" --env "POSTGRES_PASSWORD=${password}"
-wait_ready "${interrupted_restart}"
+wait_failed "${interrupted_restart}" 'stale initialization lock exists'
+"${runtime}" rm "${interrupted_restart}" >/dev/null
+
+# Recovery is an explicit operator decision after confirming that initdb never
+# began and the database directory is absent. The entrypoint never guesses.
+"${runtime}" run --rm --user 26:0 \
+    --mount "type=volume,src=${concurrent_volume},dst=/var/lib/pgsql" \
+    --entrypoint sh "${image}" -ceu \
+    'test ! -e /var/lib/pgsql/data; rmdir /var/lib/pgsql/data.postgresql-ubi.init.lock'
+recovered_initialization="${prefix}-recovered-initialization"
+run_database "${recovered_initialization}" "${concurrent_volume}" \
+    --env "POSTGRES_PASSWORD=${password}"
+wait_ready "${recovered_initialization}"
 
 echo "PostgreSQL durable-storage and lifecycle contract passed for ${image}"
