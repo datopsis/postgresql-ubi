@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+trap 'printf "resolver failed at line %s: %s\n" "${LINENO}" "${BASH_COMMAND}" >&2' ERR
 
 architecture=${1:?usage: resolve-lock.sh ARCHITECTURE INPUT_DIR OUTPUT_DIR}
 input_dir=${2:?usage: resolve-lock.sh ARCHITECTURE INPUT_DIR OUTPUT_DIR}
@@ -51,7 +52,12 @@ find_url() {
     else
         result=$(dnf repoquery --qf "${query_format}" "${spec}")
     fi
-    test "$(printf '%s\n' "${result}" | sed '/^$/d' | wc -l)" -eq 1
+    result_count=$(printf '%s\n' "${result}" | sed '/^$/d' | wc -l)
+    if test "${result_count}" -ne 1; then
+        printf 'repository lookup for %s (%s) returned %s matches:\n%s\n' \
+            "${spec}" "${mode}" "${result_count}" "${result}" >&2
+        return 1
+    fi
     printf '%s\n' "${result}"
 }
 
