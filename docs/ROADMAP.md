@@ -77,7 +77,7 @@ services in the first release.
 Work proceeds in this dependency order:
 
 1. **Complete:** approve the release/support boundary and evidence schema.
-2. Implement the complete artifact lock, verified out-of-build acquisition,
+2. **Complete:** implement the complete artifact lock, verified out-of-build acquisition,
    and network-disabled assembly.
 3. Close the database security, storage, lifecycle, TLS, logging, backup,
    restore, and upgrade test matrix.
@@ -153,40 +153,53 @@ current support claim.
 
 Implement the complete contract in `docs/ARTIFACT-ACQUISITION.md`.
 
-- [ ] Create schema-validated AMD64 and ARM64 lock manifests containing both UBI
+- [x] Create schema-validated AMD64 and ARM64 lock manifests containing both UBI
   references and manifest digests, every PostgreSQL and UBI RPM NEVRA, byte
   size, SHA-256, architecture, approved full signing fingerprint, source RPM,
   artifact-source identifier, and lock schema version.
-- [ ] Record and review the entire installed RPM closure rather than only the
+- [x] Record and review the entire installed RPM closure rather than only the
   three top-level PostgreSQL RPMs. Investigate unexpected package, file,
   setuid/setgid, world-writable, executable, or architecture differences.
-- [ ] Implement a dedicated lock-update command and workflow. Resolution is an
+- [x] Implement a dedicated lock-update command and workflow. Resolution is an
   explicit review activity; ordinary pull-request, `main`, and release builds
   must never recalculate the closure or select `latest`.
-- [ ] Acquire only locked artifacts outside the container build. Enforce
+- [x] Acquire only locked artifacts outside the container build. Enforce
   approved hosts and redirects, bounded retries/timeouts, least-privilege
   credentials when needed, sanitized logs, and cleanup of ephemeral staging.
-- [ ] Verify size, SHA-256, RPM signature and approved full fingerprint, NEVRA,
+- [x] Verify size, SHA-256, RPM signature and approved full fingerprint, NEVRA,
   source-RPM correspondence, architecture, base-image platform, and manifest
   digest before admitting a bundle to assembly.
-- [ ] Reject tampered, unsigned, unapproved-key, wrong-version,
+- [x] Reject tampered, unsigned, unapproved-key, wrong-version,
   wrong-architecture, duplicate, missing, and unexpected artifacts, malformed
   locks, wrong base digests, and source-RPM mismatches.
-- [ ] Make local, pull-request, `main`, and candidate assembly consume the same
+- [x] Make local, pull-request, `main`, and candidate assembly consume the same
   verified bundle with networking and image pulling disabled and without
   repository configuration or dependency resolution.
-- [ ] Prove that repository addresses, credentials, signing keys, private CA
+- [x] Prove that repository addresses, credentials, signing keys, private CA
   material, caches, and acquisition logs do not enter image files, layers,
   history, labels, SBOMs, or provenance.
-- [ ] Define signing-key rotation, revocation, mirror substitution, bundle
+- [x] Define signing-key rotation, revocation, mirror substitution, bundle
   transfer, lock rollback, and emergency rebuild procedures. A mirror must
   preserve publisher-signed bytes unless a separately approved trust model is
   documented.
-- [ ] Record source availability, redistribution terms, trademark boundaries,
+- [x] Record source availability, redistribution terms, trademark boundaries,
   and update ownership for every runtime component.
 
 **Exit evidence:** a clean build succeeds from only the reviewed bundle with
 network and pulls disabled, and every negative bundle test fails closed.
+
+Completed by CI run
+[`34608785089`](https://github.com/datopsis/postgresql-ubi/actions/runs/34608785089)
+for commit `3114702788c0ac67660a3526a7078fe6457273b0`. Native AMD64 and ARM64
+jobs acquired and verified their committed locks, assembled with an empty build
+cache and build networking disabled, passed restricted-runtime smoke tests,
+Trivy and Grype gates, generated SPDX SBOMs and build provenance, and proved
+acquisition material absent from retained image and assurance artifacts. The
+locks contain the complete reviewed closures: 161 binary RPMs and 111 source
+RPMs for AMD64, and 162 binary RPMs and 111 source RPMs for ARM64. The five
+artifact test groups passed their malformed, tampered, unsigned,
+unapproved-key, wrong-version, wrong-architecture, duplicate, missing,
+unexpected, wrong-base, and source-mismatch cases fail closed.
 
 ## Package 3: database security and runtime contract
 
