@@ -161,7 +161,7 @@ test "$("${runtime}" exec "${primary}" psql -qAt --host=/tmp --username=postgres
         exit 1
     fi
 '
-if "${runtime}" top "${primary}" -eo args | grep -Fq "${password}"; then
+if "${runtime}" top "${primary}" | grep -Fq "${password}"; then
     echo 'initialization credential exposed in process arguments' >&2
     exit 1
 fi
@@ -209,12 +209,13 @@ test "$("${runtime}" exec --env "PGPASSWORD=${password}" "${primary}" \
 "${runtime}" stop --time 30 "${primary}" >/dev/null
 "${runtime}" rm "${primary}" >/dev/null
 
-seed_file "${config_volume}" postgresql.conf 444 $'max_connections = 37\npassword_encryption = md5\nlogging_collector = on\nlog_statement = all\nhba_file = '\''/tmp/untrusted-hba'\''\nssl = on\n'
+seed_file "${config_volume}" postgresql.conf 444 $'max_connections = 37\npassword_encryption = md5\nlogging_collector = on\nlog_statement = all\nssl = on\n'
 configured="${prefix}-configured"
 run_restricted "${configured}" "${data_volume}" \
     --env POSTGRESQL_CONFIG_FILE=/run/config/postgresql.conf \
     --mount "type=volume,src=${config_volume},dst=/run/config,readonly" \
-    --container-command postgres -c password_encryption=md5 -c log_statement=all
+    --container-command postgres -c password_encryption=md5 -c log_statement=all \
+    -c hba_file=/tmp/untrusted-hba -c ssl=on
 wait_ready "${configured}" "${password}"
 for expectation in \
     'max_connections|37' \
