@@ -41,6 +41,7 @@ RUN test -n "${ARTIFACT_LOCK_SHA256}" \
         /final/tmp/* \
         /final/var/cache/dnf \
         /final/var/cache/yum \
+        /final/var/lib/rhsm \
         /final/var/log/* \
         /final/var/tmp/* \
     && find /final -xdev -type f -perm /6000 -exec chmod a-s {} + \
