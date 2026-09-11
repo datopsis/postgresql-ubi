@@ -32,10 +32,10 @@ must distinguish automated evidence from human review and external-platform
 qualification, and it must never contain credentials, database contents, or
 private environment details.
 
-## Working first-release boundary
+## Approved first-release boundary
 
-These are planning positions, not support claims, until the corresponding
-qualification gates close.
+These positions were approved as the scope to qualify. They are not current
+support claims until the corresponding qualification gates close.
 
 Use these terms consistently:
 
@@ -48,7 +48,7 @@ Use these terms consistently:
   operational evidence, or platform qualification is incomplete.
 - **Unsupported** means deliberately outside the first-release boundary.
 
-| Area | Working first-release position |
+| Area | Approved first-release position |
 | --- | --- |
 | PostgreSQL | Maintain major 18; select the current reviewed 18.x minor only after image-affecting work is complete. |
 | UBI | UBI 9 Minimal builder and UBI 9 Micro runtime, both by reviewed manifest digest. |
@@ -76,7 +76,7 @@ services in the first release.
 
 Work proceeds in this dependency order:
 
-1. Approve the release/support boundary and evidence schema.
+1. **Complete:** approve the release/support boundary and evidence schema.
 2. Implement the complete artifact lock, verified out-of-build acquisition,
    and network-disabled assembly.
 3. Close the database security, storage, lifecycle, TLS, logging, backup,
@@ -121,30 +121,33 @@ package closure or make a support claim before qualification.
 These checks are development and integration evidence. They must run again for
 the frozen candidate and do not by themselves close the gates below.
 
-## Package 1: release contract and evidence ownership
+## Package 1: release contract and evidence ownership (complete)
 
-- [ ] Review and approve the working first-release boundary, including the
+- [x] Review and approve the first-release boundary, including the
   exact treatment of TLS, Docker, OpenShift, logical backup, physical recovery,
   extensions, FIPS, SCAP, and controlled-network operation.
-- [ ] Reconcile `README.md`, `docs/SUPPORT.md`, `docs/VERSION.md`,
+- [x] Reconcile `README.md`, `docs/SUPPORT.md`, `docs/VERSION.md`,
   `SECURITY.md`, operator documentation, and issue templates with the approved
   boundary. Remove stale statements such as planned native CI after evidence
   already exists.
-- [ ] Define the initial support period, PostgreSQL and UBI update cadence,
+- [x] Define the initial support period, PostgreSQL and UBI update cadence,
   vulnerability-response targets, supersession window, withdrawal procedure,
   and end-of-support policy.
-- [ ] Define `docs/QUALIFICATION.md` fields for commit, image and lock digests,
+- [x] Define `docs/QUALIFICATION.md` fields for commit, image and lock digests,
   architecture, PostgreSQL/PGDG/UBI inputs, runtime and host versions,
   configuration profile, scanner/tool/database versions, result, limitations,
   evidence level, artifact location, reviewer, and retention period.
-- [ ] Assign owners for image maintenance, PostgreSQL security triage, UBI
+- [x] Assign owners for image maintenance, PostgreSQL security triage, UBI
   triage, signing-key changes, release approval, registry administration,
   vulnerability reports, and release evidence.
-- [ ] Inventory proposed badges and publish only claims backed by current,
+- [x] Inventory proposed badges and publish only claims backed by current,
   inspectable evidence with an owner and removal condition.
 
-**Exit evidence:** a reviewed support matrix and evidence schema contain no
-ambiguous release blocker or unsupported implied claim.
+**Exit evidence:** `docs/SUPPORT.md`, `docs/MAINTENANCE.md`,
+`docs/QUALIFICATION.md`, and the badge inventory in
+`docs/REPOSITORY-GOVERNANCE.md` define the approved boundary, accountable
+owners, and required evidence without turning planned qualification into a
+current support claim.
 
 ## Package 2: artifact lock and hermetic assembly
 
@@ -244,9 +247,9 @@ network and pulls disabled, and every negative bundle test fails closed.
   test correct trust, hostname failure, untrusted chain, expired/not-yet-valid
   certificates, clear-text policy, renewal, rotation, and rollback using an
   ephemeral CA with no committed private material.
-- [ ] Decide whether client-certificate authentication and certificate-to-role
-  mapping are supported, preview, or deferred. Do not imply mTLS support from a
-  server-TLS test.
+- [ ] Document and test the v1 exclusion of client-certificate authentication
+  and certificate-to-role mapping. Do not imply mTLS support from a server-TLS
+  test; qualifying this later requires a new support decision and profile.
 - [ ] Define the supported configuration interface, validation command,
   precedence, reload/restart behavior, immutable defaults, rollback, and
   diagnostics. Test mounted configuration and command-line overrides for both
@@ -256,9 +259,9 @@ network and pulls disabled, and every negative bundle test fails closed.
   events. Test secret, SQL-value, and personally identifiable information
   exclusion; explain why broad statement logging can itself expose sensitive
   data.
-- [ ] Decide whether PostgreSQL audit-extension support is deferred. If it is
-  added, treat the extension RPM, configuration, performance impact, log
-  volume, and vulnerability lifecycle as new release inputs.
+- [ ] Document the v1 deferral of PostgreSQL audit extensions. Adding one later
+  requires new RPM provenance, configuration, performance, log-volume,
+  vulnerability-lifecycle, and support decisions.
 - [ ] Distinguish startup, readiness, liveness, and external transaction
   monitoring. Keep probes low privilege, bounded, non-sensitive, and resistant
   to load-induced restart loops.

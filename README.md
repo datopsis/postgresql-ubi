@@ -41,6 +41,23 @@ repositories. Network-disabled assembly from a checked artifact lock remains a
 first-release gate; see [the roadmap](docs/ROADMAP.md) and
 [package-source decision](docs/PACKAGE-SOURCE.md).
 
+## Approved first-release boundary
+
+The first release is scoped to native AMD64 and ARM64, an exact rootless
+Podman/RHEL 9 baseline, SCRAM-SHA-256 authentication, an operator-mounted TLS
+server profile, one durable PostgreSQL instance, logical backup/restore,
+reviewed PostgreSQL 18 minor updates, and verified controlled-network
+procedures. Docker evidence is compatibility-only. OpenShift remains preview
+unless an exact restricted-SCC environment is qualified before release.
+
+High availability, physical backup/PITR products, major-version upgrade
+qualification, extra extensions, client-certificate role mapping, broad
+Kubernetes support, and FIPS validation are outside the initial release unless
+the roadmap explicitly records later qualification. See the complete
+[support contract](docs/SUPPORT.md),
+[maintenance and ownership policy](docs/MAINTENANCE.md), and
+[qualification schema](docs/QUALIFICATION.md).
+
 ## Build and test
 
 Build and run the restricted-runtime test suite with rootless Podman:

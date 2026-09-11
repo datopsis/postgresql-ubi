@@ -16,6 +16,14 @@ or changing a maintained major line therefore requires an explicit support,
 upgrade, extension-compatibility, and data-compatibility decision. It is not a
 routine in-place dependency update.
 
+PostgreSQL 18 is eligible for project releases only while the required
+PostgreSQL/PGDG and UBI 9 inputs remain maintainable. The planned product-line
+ceiling is PostgreSQL upstream's published final release date of 2030-11-14.
+Individual immutable releases receive the support and 90-day supersession
+window defined in [the support contract](SUPPORT.md#support-lifetime). Update,
+vulnerability-response, withdrawal, and ownership rules are defined in
+[the maintenance policy](MAINTENANCE.md).
+
 ## Container release format
 
 Annotated Git tags and immutable GHCR image tags use:
@@ -135,6 +143,10 @@ Before an annotated release tag is pushed:
    GitHub Release.
 7. Verify manifest architectures, digest, signature, provenance, SBOM, labels,
    scan evidence, and release assets before announcing support.
+
+The completed evidence record must use the schema in
+[`docs/QUALIFICATION.md`](QUALIFICATION.md) and name the exact support period,
+configuration profile, platform boundary, findings, exceptions, and reviewers.
 
 The `sha-<short-commit>` tag supplements but never replaces the release tag and
 digest.

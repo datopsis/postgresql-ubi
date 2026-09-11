@@ -29,3 +29,8 @@ but container releases use the upstream-derived format documented in
   non-root users behave consistently under Docker and Podman.
 - Directed PostgreSQL logs to container output and made readiness probes use the
   absolute client path and a real SQL query for consistent engine behavior.
+- Approved the first-release support boundary and added explicit support
+  classifications, lifecycle, update cadence, vulnerability-response targets,
+  withdrawal handling, and accountable ownership.
+- Added the release qualification evidence schema and a public-badge policy
+  that prohibits unsupported security, platform, or certification claims.

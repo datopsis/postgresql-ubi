@@ -8,7 +8,20 @@ body:
     attributes:
       value: >-
         Do not disclose vulnerabilities here. Use the private security link
-        shown before opening an issue.
+        shown before opening an issue. A development or compatibility result is
+        not a support claim; check docs/SUPPORT.md for the current boundary.
+  - type: dropdown
+    id: support_status
+    attributes:
+      label: Artifact status
+      description: Select the status that applies; do not infer support from a successful build.
+      options:
+        - Repository development image
+        - Published supported release
+        - Published superseded or withdrawn release
+        - Unknown or externally rebuilt image
+    validations:
+      required: true
   - type: input
     id: image
     attributes:
