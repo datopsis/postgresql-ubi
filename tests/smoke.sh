@@ -46,9 +46,10 @@ wait_for_postgresql() {
     local name="$1"
     local _
     for _ in {1..60}; do
-        if "${runtime}" exec "${name}" \
-            /usr/pgsql-18/bin/pg_isready \
-            --quiet --host=127.0.0.1 --port=5432; then
+        if "${runtime}" exec --env "PGPASSWORD=${password}" "${name}" \
+            /usr/pgsql-18/bin/psql --quiet --host=127.0.0.1 \
+            --username=postgres --dbname=postgres --command='SELECT 1' \
+            >/dev/null 2>&1; then
             return
         fi
         sleep 1

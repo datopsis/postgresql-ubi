@@ -28,4 +28,4 @@ but container releases use the upstream-derived format documented in
 - Moved the local PostgreSQL socket to the restricted `/tmp` tmpfs so arbitrary
   non-root users behave consistently under Docker and Podman.
 - Directed PostgreSQL logs to container output and made readiness probes use the
-  absolute binary path and loopback TCP for consistent engine behavior.
+  absolute client path and a real SQL query for consistent engine behavior.

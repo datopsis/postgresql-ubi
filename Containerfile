@@ -106,7 +106,7 @@ WORKDIR /var/lib/pgsql
 EXPOSE 5432
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
-  CMD ["/usr/pgsql-18/bin/pg_isready", "--quiet", "--host=127.0.0.1", "--port=5432"]
+  CMD ["/usr/pgsql-18/bin/psql", "--quiet", "--host=/tmp", "--username=postgres", "--dbname=postgres", "--command=SELECT 1"]
 
 STOPSIGNAL SIGINT
 
