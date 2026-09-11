@@ -338,6 +338,45 @@ role and transaction/retry policy.
   abnormal shutdown. Size termination grace from observed checkpoint/shutdown
   time and large-WAL crash recovery.
 
+Apply explicit runtime ceilings to the start command. This test baseline is a
+starting point only; replace it with limits measured against the deployment's
+connection count, query shapes, extensions, maintenance work, backup activity,
+and recovery workload:
+
+```console
+$RUNTIME run --detach --name postgresql \
+  --memory=2g --memory-swap=2g --shm-size=256m \
+  --ulimit nofile=4096:4096 --pids-limit=512 \
+  ...the identity, storage, secret, TLS, and hardening options above... \
+  $IMAGE@$DIGEST
+```
+
+After starting, record the applied runtime limits, wait for local readiness,
+and run the external TLS-verified transaction probe. With Docker, inspect
+`.HostConfig.Memory`, `.HostConfig.MemorySwap`, `.HostConfig.ShmSize`,
+`.HostConfig.Ulimits`, and `.HostConfig.PidsLimit`; use the equivalent Podman
+inspection fields. Also record `SHOW max_connections`, `SHOW shared_buffers`,
+and the workload-specific settings that affect per-session memory. A runtime
+limit displayed in a manifest but absent from inspection is not applied
+evidence.
+
+Exercise the following failures in a disposable qualification environment,
+then repeat after every material workload or configuration change:
+
+| Condition | Expected signal | Required response |
+| --- | --- | --- |
+| Data bytes or inodes exhausted | Write/checkpoint/init fails and storage reports exhaustion | Stop new workload, preserve the volume, add capacity or free only approved disposable files, then verify WAL recovery and application data. Never delete PostgreSQL files manually. |
+| `/tmp` or shared memory exhausted | Operation fails with an allocation/space diagnostic | Remove only the identified disposable file or increase the measured limit; confirm readiness and an external transaction before returning traffic. |
+| File descriptor or PID ceiling | Connection/background-worker creation fails | Reject excess work, inspect actual limits and active sessions/workers, increase a justified ceiling or reduce concurrency, and verify reserved operator access. |
+| Connection slots exhausted | Application receives a bounded refusal while reserved superuser slots remain | Shed/retry at the client, find leaked/long sessions, and tune pools; do not grant the application superuser or consume reserved slots for monitoring. |
+| Memory pressure or OOM kill | Runtime memory event, killed backend/container, or abnormal shutdown | Preserve storage, identify the allocating query/process, adjust workload/settings or the measured limit, restart once, allow WAL recovery, validate data, and take a fresh backup. |
+| Startup recovery exceeds probe window | Recovery log progress while application probe is not ready | Keep traffic blocked and extend startup allowance; do not let a liveness loop repeatedly kill a recovering database. Escalate if progress stops. |
+
+For each exercise, retain timestamps, immutable image digest, applied limits,
+runtime events, redacted PostgreSQL logs, probe results, recovery duration, and
+data-validation result. Never place SQL values, passwords, private keys, or
+personal data in the evidence bundle.
+
 Logs stay on stdout/stderr. Collect them with runtime/orchestrator metadata and
 access controls. The immutable profile disables statement, duration, and bind
 parameter logging because SQL and values can contain credentials, personal

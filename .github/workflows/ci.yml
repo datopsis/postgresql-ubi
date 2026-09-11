@@ -175,6 +175,12 @@ jobs:
           IMAGE: ${{ env.TEST_IMAGE }}
         run: bash tests/storage-lifecycle.sh
 
+      - name: Test resource exhaustion and recovery
+        env:
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.TEST_IMAGE }}
+        run: bash tests/resource-limits.sh
+
       - name: Test a preserved-data PostgreSQL 18 minor update
         env:
           CONTAINER_RUNTIME: docker

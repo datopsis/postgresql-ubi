@@ -251,11 +251,13 @@ wait_failed "${interrupted_restart}" 'stale initialization lock exists'
 "${runtime}" rm "${interrupted_restart}" >/dev/null
 
 # Recovery is an explicit operator decision after confirming that initdb never
-# began and the database directory is absent. The entrypoint never guesses.
+# began and the database directory is empty. The entrypoint never guesses.
+# Command substitution expands inside the inspection container.
+# shellcheck disable=SC2016
 "${runtime}" run --rm --user 26:0 \
     --mount "type=volume,src=${concurrent_volume},dst=/var/lib/pgsql" \
     --entrypoint sh "${image}" -ceu \
-    'test ! -e /var/lib/pgsql/data; rmdir /var/lib/pgsql/data.postgresql-ubi.init.lock'
+    'test -d /var/lib/pgsql/data; test -z "$(find /var/lib/pgsql/data -mindepth 1 -print -quit)"; rmdir /var/lib/pgsql/data.postgresql-ubi.init.lock'
 recovered_initialization="${prefix}-recovered-initialization"
 run_database "${recovered_initialization}" "${concurrent_volume}" \
     --env "POSTGRES_PASSWORD=${password}"
