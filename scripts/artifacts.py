@@ -29,6 +29,20 @@ DIGEST_RE = re.compile(r"^sha256:[a-f0-9]{64}$")
 FINGERPRINT_RE = re.compile(r"^[A-F0-9]{40}$")
 FILENAME_RE = re.compile(r"^[A-Za-z0-9+_.-]+$")
 ARCHES = {"amd64": "x86_64", "arm64": "aarch64"}
+BASE_PREFIXES = {
+    "builder": "registry.access.redhat.com/ubi9/ubi-minimal:",
+    "runtime": "registry.access.redhat.com/ubi9/ubi-micro:",
+}
+UBI_BINARY_REPOSITORIES = {
+    "ubi-9-baseos-rpms",
+    "ubi-9-appstream-rpms",
+    "ubi-9-codeready-builder-rpms",
+}
+UBI_SOURCE_REPOSITORIES = {
+    "ubi-9-baseos-source-rpms",
+    "ubi-9-appstream-source-rpms",
+    "ubi-9-codeready-builder-source-rpms",
+}
 
 
 class LockError(ValueError):
@@ -94,6 +108,15 @@ def require_sha256(value: object, label: str) -> str:
     return value
 
 
+def validate_base_reference(reference: object, role: str) -> str:
+    value = require_string(reference, f"base image {role}")
+    if not value.startswith(BASE_PREFIXES[role]) or "@sha256:" not in value:
+        fail(f"base image {role} is not an approved digest-pinned UBI image")
+    if not DIGEST_RE.fullmatch(value.rsplit("@", 1)[1]):
+        fail(f"base image {role} has an invalid digest")
+    return value
+
+
 def validate_inputs(path: Path) -> dict:
     data = read_json(path)
     required = {
@@ -110,9 +133,7 @@ def validate_inputs(path: Path) -> dict:
     if data["schema_version"] != 1 or data["bundle_version"] != 1:
         fail("only lock schema and bundle version 1 are supported")
     for role in ("builder", "runtime"):
-        reference = require_string(data["base_images"].get(role), f"base image {role}")
-        if "@sha256:" not in reference or not DIGEST_RE.fullmatch(reference.rsplit("@", 1)[1]):
-            fail(f"base image {role} is not digest pinned")
+        validate_base_reference(data["base_images"].get(role), role)
     if set(data["architectures"]) != set(ARCHES):
         fail("lock inputs must define exactly amd64 and arm64")
     for architecture, rpm_architecture in ARCHES.items():
@@ -196,7 +217,7 @@ def validate_lock(path: Path) -> dict:
     require_keys(bases, {"builder", "runtime"}, {"builder", "runtime"}, "base_images")
     for role, base in bases.items():
         require_keys(base, {"reference", "digest", "platform"}, {"reference", "digest", "platform"}, f"base {role}")
-        reference = require_string(base["reference"], f"base {role} reference")
+        reference = validate_base_reference(base["reference"], role)
         digest = require_string(base["digest"], f"base {role} digest")
         if not DIGEST_RE.fullmatch(digest) or not reference.endswith(f"@{digest}"):
             fail(f"base {role} reference and digest do not match")
@@ -253,7 +274,7 @@ def validate_package(package: object, architecture: str, lock: dict, fingerprint
         fail(f"package NEVRA is inconsistent: {package['nevra']}")
     if not FILENAME_RE.fullmatch(package["filename"]) or not package["filename"].endswith(".rpm"):
         fail(f"unsafe package filename: {package['filename']}")
-    validate_url(package["url"], f"package {package['nevra']}")
+    url = validate_url(package["url"], f"package {package['nevra']}")
     if not isinstance(package["size"], int) or package["size"] < 1:
         fail(f"package {package['nevra']} has an invalid size")
     require_sha256(package["sha256"], f"package {package['nevra']}")
@@ -266,6 +287,12 @@ def validate_package(package: object, architecture: str, lock: dict, fingerprint
         or f"{package['version']}-{package['release']}" != lock["postgresql_rpm_version"]
     ):
         fail(f"package {package['nevra']} violates the locked PostgreSQL version")
+    host = urllib.parse.urlsplit(url).hostname
+    if package["name"].startswith("postgresql18"):
+        if package["repository"] != "pgdg-18" or host != "download.postgresql.org":
+            fail(f"package {package['nevra']} has an inconsistent PGDG source")
+    elif package["repository"] not in UBI_BINARY_REPOSITORIES or host != "cdn-ubi.redhat.com":
+        fail(f"package {package['nevra']} has an inconsistent UBI source")
 
 
 def validate_source(source: object) -> None:
@@ -276,11 +303,17 @@ def validate_source(source: object) -> None:
     filename = require_string(source["filename"], "source package filename")
     if not FILENAME_RE.fullmatch(filename) or not filename.endswith(".src.rpm"):
         fail(f"unsafe source package filename: {filename}")
-    validate_url(source["url"], f"source package {filename}")
-    require_string(source["repository"], "source package repository")
+    url = validate_url(source["url"], f"source package {filename}")
+    repository = require_string(source["repository"], "source package repository")
     if not isinstance(source["size"], int) or source["size"] < 1:
         fail(f"source package {filename} has an invalid size")
     require_sha256(source["sha256"], f"source package {filename}")
+    host = urllib.parse.urlsplit(url).hostname
+    if filename.startswith("postgresql18-"):
+        if repository != "pgdg-18-source" or host != "dnf-srpms.postgresql.org":
+            fail(f"source package {filename} has an inconsistent PGDG source")
+    elif repository not in UBI_SOURCE_REPOSITORIES or host != "cdn-ubi.redhat.com":
+        fail(f"source package {filename} has an inconsistent UBI source")
 
 
 class ApprovedRedirectHandler(urllib.request.HTTPRedirectHandler):

@@ -24,8 +24,9 @@ RUN test -n "${ARTIFACT_LOCK_SHA256}" \
     && rpm --root /runtime --initdb \
     && rpm --root /runtime --import /tmp/artifacts/keys/* \
     && rpm --root /runtime --install /tmp/artifacts/rpms/*.rpm \
-    && rpm --root /runtime --query 'gpg-pubkey*' \
-        --qf '%{NAME}-%{VERSION}-%{RELEASE}\n' > /tmp/imported-keys \
+    && rpm --root /runtime --query --all \
+        --qf '%{NAME}-%{VERSION}-%{RELEASE}\n' \
+        | sed -n '/^gpg-pubkey-/p' > /tmp/imported-keys \
     && while IFS= read -r key; do \
         rpm --root /runtime --erase "${key}"; \
     done < /tmp/imported-keys \

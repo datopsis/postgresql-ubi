@@ -123,6 +123,9 @@ class ArtifactLockTests(unittest.TestCase):
         value = valid_lock()
         value["base_images"]["runtime"]["platform"] = "linux/arm64"
         mutations.append(value)
+        value = valid_lock()
+        value["base_images"]["runtime"]["reference"] = f"example.invalid/image@sha256:{'1' * 64}"
+        mutations.append(value)
         for mutation in mutations:
             with self.subTest(mutation=mutation):
                 self.assert_rejected(mutation)
