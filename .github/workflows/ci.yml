@@ -120,7 +120,7 @@ jobs:
       - name: Acquire, verify, and build from the locked bundle
         env:
           BUILD_METADATA_FILE: ${{ env.PROVENANCE_FILE }}
-          BUILDX_METADATA_PROVENANCE: max
+          BUILDX_METADATA_PROVENANCE: min
           CONTAINER_RUNTIME: docker
           IMAGE: ${{ env.TEST_IMAGE }}
         run: bash scripts/build-offline.sh
