@@ -61,16 +61,16 @@ jobs:
             --architecture "${ARCHITECTURE}" \
             --binary-inventory bootstrap-output/binary-inventory.tsv \
             --source-inventory bootstrap-output/source-inventory.tsv \
-            --output "bootstrap-output/${ARCHITECTURE}.lock.json"
+            --output "${ARCHITECTURE}.lock.json"
           python scripts/artifacts.py validate-lock \
-            "bootstrap-output/${ARCHITECTURE}.lock.json"
+            "${ARCHITECTURE}.lock.json"
 
       - name: Retain reviewed lock candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: artifact-lock-${{ matrix.architecture }}
           path: |
-            bootstrap-output/${{ matrix.architecture }}.lock.json
+            ${{ matrix.architecture }}.lock.json
             bootstrap-output/binary-inventory.tsv
             bootstrap-output/source-inventory.tsv
           if-no-files-found: error
