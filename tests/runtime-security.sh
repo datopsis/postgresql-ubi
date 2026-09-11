@@ -24,7 +24,12 @@ cleanup() {
     "${runtime}" volume rm --force "${volumes[@]}" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
-trap 'status=$?; printf "runtime-security failed at line %s\n" "${LINENO}" >&2; exit "${status}"' ERR
+report_error() {
+    failure_status=$?
+    printf 'runtime-security failed at line %s\n' "${BASH_LINENO[0]}" >&2
+    exit "${failure_status}"
+}
+trap report_error ERR
 
 new_container() {
     containers+=("$1")
@@ -138,9 +143,8 @@ run_restricted "${primary}" "${data_volume}" \
     --mount "type=volume,src=${secret_volume},dst=/run/secrets,readonly"
 wait_ready "${primary}" "${password}"
 
-"${runtime}" exec "${primary}" psql -qAt --host=/tmp --username=postgres \
-    --command="SELECT current_setting('data_checksums'), current_setting('password_encryption');" \
-    | grep -Fxq 'on|scram-sha-256'
+test "$("${runtime}" exec "${primary}" psql -qAt --host=/tmp --username=postgres \
+    --command='SHOW password_encryption;')" = scram-sha-256
 # Variables expand inside the database container.
 # shellcheck disable=SC2016
 "${runtime}" exec "${primary}" sh -ceu '

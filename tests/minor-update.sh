@@ -30,7 +30,12 @@ cleanup() {
     "${runtime}" volume rm --force "${volume}" "${backup_volume}" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
-trap 'status=$?; printf "minor-update failed at line %s\n" "${LINENO}" >&2; exit "${status}"' ERR
+report_error() {
+    failure_status=$?
+    printf 'minor-update failed at line %s\n' "${BASH_LINENO[0]}" >&2
+    exit "${failure_status}"
+}
+trap report_error ERR
 
 wait_ready() {
     local name=$1

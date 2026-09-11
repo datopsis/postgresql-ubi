@@ -21,7 +21,12 @@ cleanup() {
     rm -rf -- "${fixture}"
 }
 trap cleanup EXIT
-trap 'status=$?; printf "tls test failed at line %s\n" "${LINENO}" >&2; exit "${status}"' ERR
+report_error() {
+    failure_status=$?
+    printf 'tls test failed at line %s\n' "${BASH_LINENO[0]}" >&2
+    exit "${failure_status}"
+}
+trap report_error ERR
 
 make_ca() {
     local stem=$1
