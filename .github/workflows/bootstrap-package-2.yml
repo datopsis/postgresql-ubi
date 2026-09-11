@@ -1,0 +1,54 @@
+name: Bootstrap Package 2 metadata
+
+on:
+  push:
+    branches:
+      - feat/artifact-locks
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    name: inspect (${{ matrix.architecture }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: amd64
+            runner: ubuntu-24.04
+            platform: linux/amd64
+          - architecture: arm64
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Inspect UBI package and source repositories
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          UBI_MINIMAL: registry.access.redhat.com/ubi9/ubi-minimal:9.8@sha256:7fbeae18dc9476399f565e68255f602a3374ea8614ba3d14843565131a13ff93
+        run: |
+          mkdir -p bootstrap-output
+          docker run --rm --platform "${PLATFORM}" "${UBI_MINIMAL}" \
+            sh -c 'cat /etc/yum.repos.d/ubi.repo' \
+            >bootstrap-output/ubi.repo
+          docker run --rm --platform "${PLATFORM}" "${UBI_MINIMAL}" \
+            sh -c 'microdnf install -y dnf dnf-plugins-core >/dev/null && dnf repolist --all' \
+            >bootstrap-output/repolist.txt
+          docker run --rm --platform "${PLATFORM}" "${UBI_MINIMAL}" \
+            sh -c 'rpm -q --qf "%{NAME}\t%{VERSION}-%{RELEASE}\t%{ARCH}\t%{SOURCERPM}\n" -a | sort' \
+            >bootstrap-output/base-packages.tsv
+
+      - name: Retain inspection
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-2-bootstrap-${{ matrix.architecture }}
+          path: bootstrap-output
+          if-no-files-found: error
+          retention-days: 2
