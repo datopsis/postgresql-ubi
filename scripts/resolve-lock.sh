@@ -33,7 +33,7 @@ dnf install -y \
     --setopt=install_weak_deps=0 \
     --setopt=keepcache=0 \
     "${input_dir}"/rpms/*.rpm \
-    ca-certificates nss_wrapper tzdata >/dev/null
+    ca-certificates nss_wrapper tzdata
 cp "${input_dir}"/rpms/*.rpm "${output_dir}/rpms/"
 
 query_format='%{repoid}|%{location}'
