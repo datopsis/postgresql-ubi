@@ -1,0 +1,11 @@
+# Generated release and security evidence
+*.sarif
+*.spdx.json
+*.sbom.json
+cosign.bundle
+
+# Local tooling
+.venv/
+__pycache__/
+.pytest_cache/
+
