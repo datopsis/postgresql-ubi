@@ -1,4 +1,4 @@
-name: Bootstrap Package 2 metadata
+name: Bootstrap Package 2 locks
 
 on:
   push:
@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  inspect:
-    name: inspect (${{ matrix.architecture }})
+  resolve:
+    name: resolve (${{ matrix.architecture }})
     strategy:
       fail-fast: false
       matrix:
@@ -22,62 +22,56 @@ jobs:
             runner: ubuntu-24.04-arm
             platform: linux/arm64
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Inspect UBI package and source repositories
+      - name: Validate reviewed lock inputs
+        run: python scripts/artifacts.py validate-inputs artifacts/lock-inputs.json
+
+      - name: Acquire PostgreSQL seeds and approved keys
         env:
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: >-
+          python scripts/artifacts.py acquire-inputs
+          --inputs artifacts/lock-inputs.json
+          --architecture "${ARCHITECTURE}"
+          --output bootstrap-inputs
+
+      - name: Resolve and inspect the complete RPM closure
+        env:
+          ARCHITECTURE: ${{ matrix.architecture }}
           PLATFORM: ${{ matrix.platform }}
           UBI_MINIMAL: registry.access.redhat.com/ubi9/ubi-minimal:9.8@sha256:7fbeae18dc9476399f565e68255f602a3374ea8614ba3d14843565131a13ff93
-        run: |
-          mkdir -p bootstrap-output
-          docker run --rm --platform "${PLATFORM}" "${UBI_MINIMAL}" \
-            sh -c 'cat /etc/yum.repos.d/ubi.repo' \
-            >bootstrap-output/ubi.repo
-          docker run --rm --platform "${PLATFORM}" "${UBI_MINIMAL}" \
-            sh -c 'microdnf install -y dnf dnf-plugins-core >/dev/null && dnf repolist --all' \
-            >bootstrap-output/repolist.txt
-          docker run --rm --platform "${PLATFORM}" "${UBI_MINIMAL}" \
-            sh -c 'rpm -q --qf "%{NAME}\t%{VERSION}-%{RELEASE}\t%{ARCH}\t%{SOURCERPM}\n" -a | sort' \
-            >bootstrap-output/base-packages.tsv
+        run: >-
+          docker run --rm --platform "${PLATFORM}"
+          --volume "${PWD}:/work" --workdir /work
+          "${UBI_MINIMAL}" bash scripts/resolve-lock.sh
+          "${ARCHITECTURE}" /work/bootstrap-inputs /work/bootstrap-output
 
-      - name: Inspect queryable binary and source metadata
+      - name: Render and validate lock
         env:
-          PLATFORM: ${{ matrix.platform }}
-          UBI_MINIMAL: registry.access.redhat.com/ubi9/ubi-minimal:9.8@sha256:7fbeae18dc9476399f565e68255f602a3374ea8614ba3d14843565131a13ff93
+          ARCHITECTURE: ${{ matrix.architecture }}
         run: |
-          docker run --rm --platform "${PLATFORM}" "${UBI_MINIMAL}" \
-            sh -euc '
-              microdnf install -y dnf dnf-plugins-core >/dev/null
-              format="%{name}|%{epoch}|%{version}|%{release}|%{arch}|%{downloadsize}|%{location}|%{repoid}|%{sourcerpm}"
-              dnf repoquery --qf "${format}" ca-certificates
-              dnf repoquery --disablerepo="*" \
-                --enablerepo="ubi-9-*-source-rpms" \
-                --qf "${format}" ca-certificates
-            ' >bootstrap-output/repoquery-sample.txt
+          python scripts/render-lock.py \
+            --inputs artifacts/lock-inputs.json \
+            --architecture "${ARCHITECTURE}" \
+            --binary-inventory bootstrap-output/binary-inventory.tsv \
+            --source-inventory bootstrap-output/source-inventory.tsv \
+            --output "bootstrap-output/${ARCHITECTURE}.lock.json"
+          python scripts/artifacts.py validate-lock \
+            "bootstrap-output/${ARCHITECTURE}.lock.json"
 
-      - name: Inspect approved Red Hat keys
-        run: |
-          mkdir -p bootstrap-output/keys
-          curl --fail --location --proto '=https' --retry 3 \
-            --output bootstrap-output/keys/fd431d51.asc \
-            https://security.access.redhat.com/data/fd431d51.txt
-          curl --fail --location --proto '=https' --retry 3 \
-            --output bootstrap-output/keys/5a6340b3.asc \
-            https://security.access.redhat.com/data/5a6340b3.txt
-          sha256sum bootstrap-output/keys/*.asc \
-            >bootstrap-output/key-sha256.txt
-          gpg --batch --show-keys --with-colons bootstrap-output/keys/*.asc \
-            >bootstrap-output/key-metadata.txt
-
-      - name: Retain inspection
+      - name: Retain reviewed lock candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: package-2-bootstrap-${{ matrix.architecture }}
-          path: bootstrap-output
+          name: artifact-lock-${{ matrix.architecture }}
+          path: |
+            bootstrap-output/${{ matrix.architecture }}.lock.json
+            bootstrap-output/binary-inventory.tsv
+            bootstrap-output/source-inventory.tsv
           if-no-files-found: error
           retention-days: 2
