@@ -66,8 +66,9 @@ policy invalidates earlier release-candidate evidence.
 
 ## Current development limitation
 
-The current Containerfile downloads the PGDG repository package and resolves
-the exact PostgreSQL 18.6 RPM version during the builder stage. This supports
-early runtime development but is not release-qualified or reproducible if the
-repository removes or changes metadata. No image produced by that path may be
-announced as supported.
+The current Containerfile checksum-pins the three PostgreSQL 18.6 RPMs and the
+PGDG signing key, then verifies the RPM signatures. The builder still resolves
+the UBI dependency closure over the network. This supports early runtime
+development but is not release-qualified or fully reproducible if UBI metadata
+or packages change. No image produced by that path may be announced as
+supported.

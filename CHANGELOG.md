@@ -22,5 +22,7 @@ but container releases use the upstream-derived format documented in
   9.8 repositories do not expose PostgreSQL 18.
 - Added a UBI Micro development image, secure initialization entrypoint,
   restricted Compose service, and stateful rootless smoke tests.
-- Restricted PGDG dependency resolution to the PostgreSQL 18 repository after
-  native ARM64 exposed inconsistent unused `pgdg-common` metadata.
+- Replaced PGDG repository resolution with checksum-pinned, signature-checked
+  PostgreSQL RPM artifacts after native ARM64 exposed invalid signed metadata.
+- Moved the local PostgreSQL socket to the restricted `/tmp` tmpfs so arbitrary
+  non-root users behave consistently under Docker and Podman.

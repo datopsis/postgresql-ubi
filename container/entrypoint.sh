@@ -55,7 +55,7 @@ initialize_database() {
         --auth-local=trust \
         --encoding=UTF8
 
-    printf "\nlisten_addresses = '*'\nunix_socket_directories = '/run/postgresql'\npassword_encryption = 'scram-sha-256'\n" \
+    printf "\nlisten_addresses = '*'\nunix_socket_directories = '/tmp'\npassword_encryption = 'scram-sha-256'\n" \
         >>"${PGDATA}/postgresql.conf"
     printf '\nhost all all all scram-sha-256\n' >>"${PGDATA}/pg_hba.conf"
 

@@ -27,10 +27,12 @@ These are observed development inputs, not a permanent lock or release claim.
 The first release requires equivalent availability and native tests on AMD64
 and ARM64 plus an external artifact lock and network-disabled assembly.
 
-The development build enables only the PGDG 18 application repository from the
-PGDG set. Older major-version and PGDG common repositories are disabled so they
-cannot influence the dependency closure; RPM and repository-metadata signature
-checks remain enabled for the selected source.
+The development build downloads the three architecture-specific PostgreSQL RPMs
+directly from the PGDG 18 directory. Each URL and SHA-256 digest is explicit in
+the Containerfile. The PGDG signing key is also checksum-pinned, its fingerprint
+is documented above, and every RPM signature is checked before installation.
+This avoids mutable PGDG repository metadata influencing the package selection;
+DNF resolves only the remaining dependencies from the UBI repositories.
 
 ## Supplier boundary
 

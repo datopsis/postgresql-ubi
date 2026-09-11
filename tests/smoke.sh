@@ -36,7 +36,6 @@ run_restricted() {
     "${runtime}" run --detach --name "${name}" \
         --read-only \
         --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m,mode=1777 \
-        --tmpfs /run/postgresql:rw,noexec,nosuid,nodev,size=16m,mode=0775 \
         --mount "type=volume,src=${volume},dst=/var/lib/pgsql" \
         --cap-drop ALL \
         --security-opt "${no_new_privileges}" \
@@ -48,7 +47,7 @@ wait_for_postgresql() {
     local _
     for _ in {1..60}; do
         if "${runtime}" exec "${name}" \
-            pg_isready --quiet --host=/run/postgresql --port=5432; then
+            pg_isready --quiet --host=/tmp --port=5432; then
             return
         fi
         sleep 1
