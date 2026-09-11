@@ -53,7 +53,7 @@ jobs:
           docker run --rm --platform "${PLATFORM}" "${UBI_MINIMAL}" \
             sh -euc '
               microdnf install -y dnf dnf-plugins-core >/dev/null
-              format="%{name}|%{epoch}|%{version}|%{release}|%{arch}|%{downloadsize}|%{checksum}|%{location}|%{repoid}|%{sourcerpm}"
+              format="%{name}|%{epoch}|%{version}|%{release}|%{arch}|%{downloadsize}|%{location}|%{repoid}|%{sourcerpm}"
               dnf repoquery --qf "${format}" ca-certificates
               dnf repoquery --disablerepo="*" \
                 --enablerepo="ubi-9-*-source-rpms" \
