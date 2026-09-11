@@ -3,6 +3,7 @@
 *.spdx.json
 *.sbom.json
 provenance-*.json
+*.oci.tar
 cosign.bundle
 
 # Local tooling
