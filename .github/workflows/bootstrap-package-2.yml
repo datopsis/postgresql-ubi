@@ -60,6 +60,20 @@ jobs:
                 --qf "${format}" ca-certificates
             ' >bootstrap-output/repoquery-sample.txt
 
+      - name: Inspect approved Red Hat keys
+        run: |
+          mkdir -p bootstrap-output/keys
+          curl --fail --location --proto '=https' --retry 3 \
+            --output bootstrap-output/keys/fd431d51.asc \
+            https://security.access.redhat.com/data/fd431d51.txt
+          curl --fail --location --proto '=https' --retry 3 \
+            --output bootstrap-output/keys/5a6340b3.asc \
+            https://security.access.redhat.com/data/5a6340b3.txt
+          sha256sum bootstrap-output/keys/*.asc \
+            >bootstrap-output/key-sha256.txt
+          gpg --batch --show-keys --with-colons bootstrap-output/keys/*.asc \
+            >bootstrap-output/key-metadata.txt
+
       - name: Retain inspection
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
