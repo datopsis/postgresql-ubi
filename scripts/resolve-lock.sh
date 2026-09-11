@@ -63,9 +63,9 @@ find_url() {
 
 while IFS= read -r rpm_path; do
     metadata=$(rpm -qp --qf \
-        '%{NAME}|%{EPOCHNUM}|%{VERSION}|%{RELEASE}|%{ARCH}|%{SOURCERPM}|%{SIGPGP:pgpsig}|%{SIGGPG:pgpsig}' \
+        '%{NAME}|%{EPOCHNUM}|%{VERSION}|%{RELEASE}|%{ARCH}|%{SOURCERPM}' \
         "${rpm_path}")
-    IFS='|' read -r name epoch version release package_arch source_rpm sigpgp siggpg \
+    IFS='|' read -r name epoch version release package_arch source_rpm \
         <<<"${metadata}"
     filename=$(basename "${rpm_path}")
     if [[ ${name} == postgresql18* ]]; then
@@ -84,7 +84,9 @@ while IFS= read -r rpm_path; do
         esac
         url="https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/${rpm_architecture}/${component}/os/${location}"
     fi
-    signature="${sigpgp} ${siggpg}"
+    signature=$(rpm -qp --qf \
+        '%{SIGPGP:pgpsig}|%{SIGGPG:pgpsig}|%{RSAHEADER:pgpsig}|%{DSAHEADER:pgpsig}' \
+        "${rpm_path}")
     key_id=$(sed -n 's/.*[Kk]ey ID \([0-9A-Fa-f]*\).*/\1/p' <<<"${signature}" | head -n1)
     test -n "${key_id}"
     size=$(stat -c '%s' "${rpm_path}")
