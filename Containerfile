@@ -57,8 +57,6 @@ ARG ARTIFACT_LOCK_SHA256
 
 LABEL org.opencontainers.image.title="PostgreSQL on Red Hat UBI 9" \
       org.opencontainers.image.description="A security-oriented, rootless PostgreSQL image built on Red Hat UBI 9 Micro" \
-      org.opencontainers.image.source="https://github.com/datopsis/postgresql-ubi" \
-      org.opencontainers.image.documentation="https://github.com/datopsis/postgresql-ubi#readme" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.vendor="Datopsis" \
       org.opencontainers.image.version="${POSTGRESQL_VERSION}" \
