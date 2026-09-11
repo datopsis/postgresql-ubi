@@ -19,6 +19,7 @@ RUN microdnf install -y dnf \
     && dnf install -y \
         --installroot=/runtime \
         --releasever=9 \
+        --disablerepo=pgdg-common,pgdg17,pgdg16,pgdg15,pgdg14 \
         --setopt=install_weak_deps=0 \
         --setopt=keepcache=0 \
         "postgresql18-${POSTGRESQL_RPM_VERSION}" \
