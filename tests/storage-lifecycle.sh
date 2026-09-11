@@ -76,7 +76,11 @@ wait_failed() {
     for _ in {1..60}; do
         if test "$("${runtime}" inspect --format '{{.State.Status}}' "${name}")" != running; then
             test "$("${runtime}" inspect --format '{{.State.ExitCode}}' "${name}")" != 0
-            "${runtime}" logs "${name}" 2>&1 | grep -Fq "${expected}"
+            if ! "${runtime}" logs "${name}" 2>&1 | grep -Fq "${expected}"; then
+                printf 'expected failure text not found: %s\n' "${expected}" >&2
+                "${runtime}" logs "${name}" >&2
+                return 1
+            fi
             return
         fi
         sleep 1
