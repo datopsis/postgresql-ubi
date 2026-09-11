@@ -47,11 +47,13 @@ wait_for_postgresql() {
     local _
     for _ in {1..60}; do
         if "${runtime}" exec "${name}" \
-            pg_isready --quiet --host=127.0.0.1 --port=5432; then
+            /usr/pgsql-18/bin/pg_isready \
+            --quiet --host=127.0.0.1 --port=5432; then
             return
         fi
         sleep 1
     done
+    "${runtime}" inspect --format '{{json .State}}' "${name}" >&2
     "${runtime}" logs "${name}" >&2
     return 1
 }

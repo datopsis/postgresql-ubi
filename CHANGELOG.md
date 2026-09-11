@@ -27,3 +27,5 @@ but container releases use the upstream-derived format documented in
 - Pinned the distinct PGDG ARM64 signing key used by the AArch64 RPM artifacts.
 - Moved the local PostgreSQL socket to the restricted `/tmp` tmpfs so arbitrary
   non-root users behave consistently under Docker and Podman.
+- Directed PostgreSQL logs to container output and made readiness probes use the
+  absolute binary path and loopback TCP for consistent engine behavior.
