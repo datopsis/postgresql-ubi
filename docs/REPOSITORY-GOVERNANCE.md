@@ -30,3 +30,28 @@ private advisory route, not public issues.
 CODEOWNERS identifies review responsibility but does not replace branch rules.
 Runtime, authentication, storage, entrypoint, package-source, workflow, and
 release changes require explicit security and operational review.
+
+The accountable roles, response expectations, and explicit single-maintainer
+risk are recorded in [Maintenance and ownership](MAINTENANCE.md). The current
+maintainer owns repository administration, but the first public release still
+requires an independent security/release review. Do not bypass required checks
+or weaken protections because an independent reviewer is unavailable; delay
+the release instead.
+
+## Public badge inventory
+
+No badge is currently approved for publication in `README.md`. Badges summarize
+external state and are not release evidence. The following inventory prevents
+an aspirational badge from becoming an unsupported claim:
+
+| Candidate | Decision | Evidence required before publication | Owner | Removal condition |
+| --- | --- | --- | --- | --- |
+| CI | Deferred until the artifact-lock gate closes | Public default-branch workflow showing all required checks | `@joey-huckabee` | Workflow disabled, required gate removed, or badge no longer points to `main` |
+| OpenSSF Scorecard | Deferred until first-release repository settings are complete | Current public Scorecard run and documented interpretation | `@joey-huckabee` | Scan becomes stale, workflow disabled, or result cannot be inspected |
+| Signed image | Deferred until a release exists | Public immutable digest plus successful Cosign verification instructions | `@joey-huckabee` | No currently supported signed digest or verification fails |
+| SBOM | Deferred until a release exists | Digest-bound downloadable SPDX release asset or attestation | `@joey-huckabee` | Asset missing, expired, mismatched, or no longer covers a supported digest |
+| FIPS, STIG, compliance, Red Hat certification, or support | Prohibited without separately approved evidence | Applicable validation/certification and exact supported boundary | `@joey-huckabee` | Any prerequisite expires, changes, or cannot be independently verified |
+
+A badge change requires pull-request review of its destination, wording,
+evidence, owner, and removal condition. A passing badge never broadens
+[`docs/SUPPORT.md`](SUPPORT.md).

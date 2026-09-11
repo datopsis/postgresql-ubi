@@ -3,4 +3,11 @@
 /.github/ @joey-huckabee
 /Containerfile @joey-huckabee
 /container/ @joey-huckabee
+/SECURITY.md @joey-huckabee
+/docs/ARTIFACT-ACQUISITION.md @joey-huckabee
+/docs/MAINTENANCE.md @joey-huckabee
+/docs/QUALIFICATION.md @joey-huckabee
+/docs/ROADMAP.md @joey-huckabee
+/docs/SUPPORT.md @joey-huckabee
+/docs/VERSION.md @joey-huckabee
 /tests/ @joey-huckabee
