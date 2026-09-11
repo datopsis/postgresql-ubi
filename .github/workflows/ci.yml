@@ -136,7 +136,6 @@ jobs:
             echo 'forbidden acquisition material found in build provenance' >&2
             exit 1
           fi
-          rm -- "${PROVENANCE_FILE}.oci.tar"
           docker run --rm --user 0 --entrypoint /bin/sh "${TEST_IMAGE}" -ec '
             for path in /etc/dnf /etc/pki/entitlement /etc/pki/rpm-gpg /etc/rhsm /etc/yum.repos.d /var/cache/dnf /var/cache/yum; do
               if test -e "${path}"; then

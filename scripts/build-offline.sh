@@ -40,11 +40,8 @@ build_arguments=(--file Containerfile --tag "${image}" --network=none \
     --build-arg UBI_MINIMAL_IMAGE=localhost/postgresql-ubi-builder:locked \
     --build-arg UBI_MICRO_IMAGE=localhost/postgresql-ubi-runtime:locked \
     --build-arg ARTIFACT_LOCK_SHA256="${lock_sha}" .)
-"${runtime}" build "${build_arguments[@]}"
-
 if test "${runtime}" = docker && test -n "${BUILD_METADATA_FILE:-}"; then
-    docker buildx build --provenance=mode=max \
-        --metadata-file "${BUILD_METADATA_FILE}" \
-        --output "type=oci,dest=${BUILD_METADATA_FILE}.oci.tar" \
-        "${build_arguments[@]}"
+    build_arguments=(--metadata-file "${BUILD_METADATA_FILE}" "${build_arguments[@]}")
 fi
+
+"${runtime}" build "${build_arguments[@]}"
