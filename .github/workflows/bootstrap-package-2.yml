@@ -45,6 +45,21 @@ jobs:
             sh -c 'rpm -q --qf "%{NAME}\t%{VERSION}-%{RELEASE}\t%{ARCH}\t%{SOURCERPM}\n" -a | sort' \
             >bootstrap-output/base-packages.tsv
 
+      - name: Inspect queryable binary and source metadata
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          UBI_MINIMAL: registry.access.redhat.com/ubi9/ubi-minimal:9.8@sha256:7fbeae18dc9476399f565e68255f602a3374ea8614ba3d14843565131a13ff93
+        run: |
+          docker run --rm --platform "${PLATFORM}" "${UBI_MINIMAL}" \
+            sh -euc '
+              microdnf install -y dnf dnf-plugins-core >/dev/null
+              format="%{name}|%{epoch}|%{version}|%{release}|%{arch}|%{downloadsize}|%{checksum}|%{location}|%{repoid}|%{sourcerpm}"
+              dnf repoquery --qf "${format}" ca-certificates
+              dnf repoquery --disablerepo="*" \
+                --enablerepo="ubi-9-*-source-rpms" \
+                --qf "${format}" ca-certificates
+            ' >bootstrap-output/repoquery-sample.txt
+
       - name: Retain inspection
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
