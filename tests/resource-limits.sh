@@ -45,7 +45,7 @@ run_limited() {
         --ulimit nofile=256:256 --pids-limit=128 \
         --mount "type=volume,src=${data_volume},dst=/var/lib/pgsql" \
         --cap-drop ALL --security-opt "${no_new_privileges}" \
-        "$@" "${image}" \
+        "$@" "${image}" postgres \
         -c max_connections=12 -c superuser_reserved_connections=3 >/dev/null
 }
 
@@ -130,7 +130,10 @@ if test "$("${runtime}" inspect --format '{{.State.Running}}' "${database}")" = 
     wait_ready "${database}"
     "${runtime}" stop --time 30 "${database}" >/dev/null
 else
-    test "$("${runtime}" inspect --format '{{.State.OOMKilled}}' "${database}")" = true
+    if test "$("${runtime}" inspect --format '{{.State.OOMKilled}}' "${database}")" != true; then
+        database_logs=$("${runtime}" logs "${database}" 2>&1)
+        grep -Eq 'terminated by signal 9|out of memory|oom-kill' <<<"${database_logs}"
+    fi
 fi
 "${runtime}" rm "${database}" >/dev/null
 
