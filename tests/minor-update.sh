@@ -63,6 +63,7 @@ test "$("${runtime}" image inspect --format '{{.Architecture}}' "${previous_imag
     --mount "type=volume,src=${volume},dst=/var/lib/postgresql" \
     --mount "type=volume,src=${backup_volume},dst=/backup" \
     --env "POSTGRES_PASSWORD=${password}" \
+    --env 'POSTGRES_INITDB_ARGS=--locale=C --encoding=UTF8 --data-checksums' \
     "${previous_image}" >/dev/null
 wait_ready "${old_container}" 180004
 # Docker exec defaults to root in the official fixture; inspect PostgreSQL PID

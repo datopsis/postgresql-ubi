@@ -102,6 +102,16 @@ review and qualification:
    readiness, application transactions, and backup after deployment; and
 8. record elapsed shutdown/start/recovery time and the exact old/new digests.
 
+The target image must provide every libc locale recorded in the cluster's
+configuration and databases. Check `SHOW lc_collate`, `SHOW lc_ctype`, the
+`datcollate`/`datctype` catalog values, and any ICU locale/provider settings
+before changing the base distribution. A cluster initialized with a locale
+available only in the source image must not be started here until that locale
+dependency is provided and qualified or the data is migrated through a
+supported logical procedure. The cross-image CI fixture deliberately uses
+UTF-8 encoding with the portable `C` locale; it does not claim compatibility
+for untested operating-system locale definitions.
+
 Rollback means restoring the previous backup/snapshot with the previous image,
 or applying a reviewed forward fix. Do not assume an older PostgreSQL binary
 can safely open files after a newer minor has started them. The initial 18.6
