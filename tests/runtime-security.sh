@@ -148,9 +148,18 @@ test "$("${runtime}" exec "${primary}" psql -qAt --host=/tmp --username=postgres
 # Variables expand inside the database container.
 # shellcheck disable=SC2016
 "${runtime}" exec "${primary}" sh -ceu '
-    test "$(ulimit -c)" = 0
-    ! find /tmp -maxdepth 1 -name "postgresql-password.*" -print -quit | grep -q .
-    ! tr "\0" "\n" </proc/1/environ | grep -E "^POSTGRES_PASSWORD(_FILE)?="
+    grep -Eq "^Max core file size[[:space:]]+0[[:space:]]+" /proc/1/limits || {
+        echo "PostgreSQL PID 1 has a nonzero core-file soft limit" >&2
+        exit 1
+    }
+    if find /tmp -maxdepth 1 -name "postgresql-password.*" -print -quit | grep -q .; then
+        echo "transient password file persisted after initialization" >&2
+        exit 1
+    fi
+    if tr "\0" "\n" </proc/1/environ | grep -E "^POSTGRES_PASSWORD(_FILE)?="; then
+        echo "initialization credential persisted in PID 1 environment" >&2
+        exit 1
+    fi
 '
 if "${runtime}" top "${primary}" -eo args | grep -Fq "${password}"; then
     echo 'initialization credential exposed in process arguments' >&2
