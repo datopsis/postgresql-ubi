@@ -65,7 +65,12 @@ test "$("${runtime}" image inspect --format '{{.Architecture}}' "${previous_imag
     --env "POSTGRES_PASSWORD=${password}" \
     "${previous_image}" >/dev/null
 wait_ready "${old_container}" 180004
-test "$("${runtime}" exec "${old_container}" id -u)" = 999
+# Docker exec defaults to root in the official fixture; inspect PostgreSQL PID
+# 1 to verify the actual server identity.
+# The awk fields expand inside the fixture container.
+# shellcheck disable=SC2016
+test "$("${runtime}" exec "${old_container}" awk '/^Uid:/ { print $2 }' \
+    /proc/1/status)" = 999
 # PGDATA expands inside the compatibility-fixture container.
 # shellcheck disable=SC2016
 test "$("${runtime}" exec "${old_container}" sh -c 'printf %s "$PGDATA"')" = \
@@ -77,9 +82,12 @@ test "$("${runtime}" exec "${old_container}" sh -c 'printf %s "$PGDATA"')" = \
 fixture_digest=$("${runtime}" exec "${old_container}" psql -qAt --host=/var/run/postgresql \
     --username=postgres \
     --command="SELECT md5(string_agg(id || ':' || payload, ',' ORDER BY id)) FROM update_fixture;")
+"${runtime}" exec --user 0 "${old_container}" sh -c \
+    'chown 999:0 /backup; chmod 0770 /backup'
 "${runtime}" exec "${old_container}" pg_dump --host=/var/run/postgresql \
     --username=postgres --format=custom --file=/backup/pre-update.dump postgres
-"${runtime}" exec "${old_container}" sh -c 'test -s /backup/pre-update.dump; chmod 0400 /backup/pre-update.dump'
+"${runtime}" exec --user 0 "${old_container}" sh -c \
+    'test -s /backup/pre-update.dump; chown 999:0 /backup/pre-update.dump; chmod 0440 /backup/pre-update.dump'
 "${runtime}" stop --time 30 "${old_container}" >/dev/null
 "${runtime}" rm "${old_container}" >/dev/null
 
