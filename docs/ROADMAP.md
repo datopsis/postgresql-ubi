@@ -228,6 +228,14 @@ unexpected, wrong-base, and source-mismatch cases fail closed.
 
 ### Durable storage and lifecycle
 
+- [ ] Publish detailed, executable deployment playbooks for every v1 use case:
+  fixed UID and arbitrary UID, rootless Podman and Docker/Compose, named volumes
+  and SELinux-labeled bind mounts, TLS and intentionally isolated non-TLS
+  profiles, mounted configuration, controlled-network transfer, backup/restore,
+  minor update, rollback, failure recovery, and teardown. Each playbook must
+  state prerequisites, trust and ownership boundaries, every deployment step,
+  expected verification evidence, security-sensitive alternatives, failure
+  diagnostics, and data-preserving removal steps.
 - [ ] Document named-volume and bind-mount ownership for UID `26:0` and
   arbitrary UID/group `0`, including SELinux labels, NFS root-squash, CSI/PVC
   behavior, filesystem permissions, and safe failure diagnostics.

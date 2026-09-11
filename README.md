@@ -41,6 +41,13 @@ publisher keys, source RPMs, and digest-pinned UBI inputs. Artifact acquisition
 is separate from a network-disabled, pull-disabled container build; see the
 [artifact acquisition contract](docs/ARTIFACT-ACQUISITION.md).
 
+Detailed procedures for choosing, deploying, verifying, operating, updating,
+recovering, and safely removing each intended profile are in the
+[deployment and operations guide](docs/DEPLOYMENT.md). The
+[runtime security contract](docs/RUNTIME-SECURITY.md) and
+[storage, backup, and upgrade guide](docs/STORAGE.md) define the associated
+security and data-lifecycle boundaries.
+
 ## Approved first-release boundary
 
 The first release is scoped to native AMD64 and ARM64, an exact rootless
