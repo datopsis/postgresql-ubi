@@ -163,6 +163,36 @@ jobs:
           IMAGE: ${{ env.TEST_IMAGE }}
         run: bash tests/smoke.sh
 
+      - name: Test authentication and configuration security
+        env:
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.TEST_IMAGE }}
+        run: bash tests/runtime-security.sh
+
+      - name: Test durable storage and lifecycle
+        env:
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.TEST_IMAGE }}
+        run: bash tests/storage-lifecycle.sh
+
+      - name: Test resource exhaustion and recovery
+        env:
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.TEST_IMAGE }}
+        run: bash tests/resource-limits.sh
+
+      - name: Test a preserved-data PostgreSQL 18 minor update
+        env:
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.TEST_IMAGE }}
+        run: bash tests/minor-update.sh
+
+      - name: Test the TLS server profile
+        env:
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.TEST_IMAGE }}
+        run: bash tests/tls.sh
+
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:

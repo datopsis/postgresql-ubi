@@ -20,7 +20,7 @@ if grep -qi podman <<<"$("${runtime}" --version 2>&1)"; then
 fi
 
 cleanup() {
-    "${runtime}" rm --force \
+    "${runtime}" rm --force --volumes \
         "${primary}" "${restart}" "${arbitrary}" \
         "${missing_password}" "${wrong_major}" >/dev/null 2>&1 || true
     "${runtime}" volume rm --force \
@@ -109,6 +109,19 @@ run_restricted "${primary}" "${primary_volume}" \
 wait_for_postgresql "${primary}"
 test "$(sql "${primary}" 'SHOW server_version;')" = "18.6"
 test "$(sql "${primary}" 'SHOW password_encryption;')" = "scram-sha-256"
+test "$(sql "${primary}" 'SHOW data_checksums;')" = on
+test "$(sql "${primary}" 'SHOW logging_collector;')" = off
+test "$(sql "${primary}" 'SHOW log_statement;')" = none
+test "$(sql "${primary}" 'SHOW log_parameter_max_length;')" = 0
+test "$(sql "${primary}" 'SHOW log_parameter_max_length_on_error;')" = 0
+test "$(sql "${primary}" 'SHOW ssl;')" = off
+# Variables expand inside the container.
+# shellcheck disable=SC2016
+test "$("${runtime}" exec "${primary}" sh -c \
+    'cat "$PGDATA/pg_hba.conf"')" = "# Managed by postgresql-ubi; replaced on every start.
+local all all trust
+host all all 0.0.0.0/0 scram-sha-256
+host all all ::/0 scram-sha-256"
 sql "${primary}" \
     'CREATE TABLE persistence_probe (value text NOT NULL); INSERT INTO persistence_probe VALUES ('"'"'survives'"'"');' \
     >/dev/null
@@ -121,6 +134,11 @@ assert_process_security "${primary}"
     '! (printf probe > /root-filesystem-probe) 2>/dev/null'
 if grep -Fq "${password}" <<<"$("${runtime}" logs "${primary}" 2>&1)"; then
     echo "Initialization password was exposed in container logs" >&2
+    exit 1
+fi
+if "${runtime}" exec "${primary}" sh -c \
+    'tr "\0" "\n" </proc/1/environ | grep -E "^POSTGRES_PASSWORD(_FILE)?="'; then
+    echo "Initialization credential remained in the PostgreSQL process environment" >&2
     exit 1
 fi
 

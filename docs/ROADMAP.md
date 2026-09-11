@@ -79,7 +79,7 @@ Work proceeds in this dependency order:
 1. **Complete:** approve the release/support boundary and evidence schema.
 2. **Complete:** implement the complete artifact lock, verified out-of-build acquisition,
    and network-disabled assembly.
-3. Close the database security, storage, lifecycle, TLS, logging, backup,
+3. **Complete:** close the database security, storage, lifecycle, TLS, logging, backup,
    restore, and upgrade test matrix.
 4. Add the release pipeline and remaining supply-chain controls.
 5. Complete the cybersecurity requirement analysis, threat model, control
@@ -205,85 +205,100 @@ unexpected, wrong-base, and source-mismatch cases fail closed.
 
 ### Initialization, identity, and authentication
 
-- [ ] Threat-test both password interfaces for empty values, simultaneous
+- [x] Threat-test both password interfaces for empty values, simultaneous
   variables, unreadable files, symlinks, permissions, unusual characters,
   command-line exposure, environment inspection, logs, errors, core dumps, and
   persistence after initialization. Document the remaining environment-variable
   exposure and prefer secret-file mounts.
-- [ ] Test interrupted and concurrent first initialization, a non-empty
+- [x] Test interrupted and concurrent first initialization, a non-empty
   directory without `PG_VERSION`, partial initialization residue, wrong
   ownership, read-only storage, full storage, and restart after each failure.
   Fail closed with actionable diagnostics and never silently reinitialize data.
-- [ ] Review the generated `pg_hba.conf` and `postgresql.conf` line by line.
+- [x] Review the generated `pg_hba.conf` and `postgresql.conf` line by line.
   Prove remote password authentication is SCRAM, local trust is limited to the
   container-local socket boundary, password encryption remains SCRAM, and
   configuration precedence cannot silently weaken these defaults.
-- [ ] Document role and database creation, password rotation after
+- [x] Document role and database creation, password rotation after
   initialization, superuser ownership, least-privilege application roles, and
   why initialization environment variables are not a general account-management
   interface.
-- [ ] Decide whether init scripts are deliberately unsupported for v1 or add a
+- [x] Decide whether init scripts are deliberately unsupported for v1 or add a
   narrowly specified, ordered, failure-safe interface with tests for ownership,
   secrets, retries, and partial execution.
 
 ### Durable storage and lifecycle
 
-- [ ] Document named-volume and bind-mount ownership for UID `26:0` and
+- [x] Publish detailed, executable deployment playbooks for every v1 use case:
+  fixed UID and arbitrary UID, rootless Podman and Docker/Compose, named volumes
+  and SELinux-labeled bind mounts, TLS and intentionally isolated non-TLS
+  profiles, mounted configuration, controlled-network transfer, backup/restore,
+  minor update, rollback, failure recovery, and teardown. Each playbook must
+  state prerequisites, trust and ownership boundaries, every deployment step,
+  expected verification evidence, security-sensitive alternatives, failure
+  diagnostics, and data-preserving removal steps.
+- [x] Document named-volume and bind-mount ownership for UID `26:0` and
   arbitrary UID/group `0`, including SELinux labels, NFS root-squash, CSI/PVC
   behavior, filesystem permissions, and safe failure diagnostics.
-- [ ] Prove data checksums are enabled and test clean shutdown, termination
+- [x] Prove data checksums are enabled and test clean shutdown, termination
   during writes, forced termination, crash recovery, restart with a large WAL,
   PID/socket cleanup, and container replacement without data loss.
-- [ ] Test disk-full, inode-full, bounded `/tmp`, insufficient shared memory,
+- [x] Test disk-full, inode-full, bounded `/tmp`, insufficient shared memory,
   low file-descriptor/PID limits, memory pressure/OOM, connection exhaustion,
   and startup under recovery. Document safe resource, `shm_size`, timeout, and
   termination-grace guidance without claiming universal sizing values.
-- [ ] Define logical `pg_dump`/`pg_restore` backup and restore procedures,
+- [x] Define logical `pg_dump`/`pg_restore` backup and restore procedures,
   encryption and access requirements, retention/immutability ownership, and a
   scheduled isolated restoration test with measured recovery time and data
   validation.
-- [ ] Document ownership and safe starting points for physical backup,
+- [x] Document ownership and safe starting points for physical backup,
   `pg_basebackup`, WAL archiving, point-in-time recovery, and storage snapshots.
   Do not imply these are complete merely because the binaries are present.
-- [ ] Test a PostgreSQL 18 minor update against preserved data, application
+- [x] Test a PostgreSQL 18 minor update against preserved data, application
   compatibility fixtures, backup/restore, and rollback constraints. Retain the
   previous digest and explain that downgrading database files is not assumed
   safe.
-- [ ] Keep other-major data directories rejected and publish a major-upgrade
+- [x] Keep other-major data directories rejected and publish a major-upgrade
   decision tree for `pg_upgrade` versus logical dump/restore without claiming a
   major upgrade has been qualified.
 
 ### TLS, configuration, logging, and observability
 
-- [ ] Provide a tested TLS 1.2/1.3 profile using operator-mounted server key,
+- [x] Provide a tested TLS 1.2/1.3 profile using operator-mounted server key,
   certificate chain, and trust store. Enforce key ownership and permissions;
   test correct trust, hostname failure, untrusted chain, expired/not-yet-valid
   certificates, clear-text policy, renewal, rotation, and rollback using an
   ephemeral CA with no committed private material.
-- [ ] Document and test the v1 exclusion of client-certificate authentication
+- [x] Document and test the v1 exclusion of client-certificate authentication
   and certificate-to-role mapping. Do not imply mTLS support from a server-TLS
   test; qualifying this later requires a new support decision and profile.
-- [ ] Define the supported configuration interface, validation command,
+- [x] Define the supported configuration interface, validation command,
   precedence, reload/restart behavior, immutable defaults, rollback, and
   diagnostics. Test mounted configuration and command-line overrides for both
   valid and security-weakening cases.
-- [ ] Keep database logs on stdout/stderr and provide structured collection
+- [x] Keep database logs on stdout/stderr and provide structured collection
   guidance for connection, authentication, checkpoint, recovery, and shutdown
   events. Test secret, SQL-value, and personally identifiable information
   exclusion; explain why broad statement logging can itself expose sensitive
   data.
-- [ ] Document the v1 deferral of PostgreSQL audit extensions. Adding one later
+- [x] Document the v1 deferral of PostgreSQL audit extensions. Adding one later
   requires new RPM provenance, configuration, performance, log-volume,
   vulnerability-lifecycle, and support decisions.
-- [ ] Distinguish startup, readiness, liveness, and external transaction
+- [x] Distinguish startup, readiness, liveness, and external transaction
   monitoring. Keep probes low privilege, bounded, non-sensitive, and resistant
   to load-induced restart loops.
-- [ ] Compare the candidate with the matching official PostgreSQL image:
+- [x] Compare the candidate with the matching official PostgreSQL image:
   entrypoint behavior, environment interface, users, storage paths, packages,
   ports, health semantics, image size, and documented compatibility gaps.
 
 **Exit evidence:** positive and negative AMD64/ARM64 tests cover every claimed
 database interface, security default, storage transition, and lifecycle path.
+
+**Completed 2026-09-11:** native AMD64 and ARM64 CI run
+[34647961464](https://github.com/datopsis/postgresql-ubi/actions/runs/34647961464)
+passed the restricted runtime, authentication/configuration, durable storage,
+resource exhaustion/recovery, PostgreSQL 18.4-to-18.6 preserved-data update,
+TLS rotation/negative, vulnerability, SBOM, and repository gates at revision
+`9827bd94ce41c35796b7fa56bd2cae35b7347aa3`.
 
 ## Package 4: CI, updates, and release supply chain
 

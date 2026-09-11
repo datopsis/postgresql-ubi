@@ -2,7 +2,13 @@
 
 CI runs repository validation, configuration scanning, native AMD64 and ARM64
 image builds, restricted-runtime smoke tests, Trivy and Grype vulnerability
-gates, and Syft SPDX SBOM generation. The aggregate `image` job fails unless
+gates, and Syft SPDX SBOM generation. Runtime tests cover authentication and
+configuration precedence, initialization failure modes, durable-state
+lifecycle and crash recovery, logical backup/restoration, and the TLS profile.
+Resource tests exercise inode, shared-memory, connection, and cgroup-memory
+exhaustion under explicit file-descriptor and PID ceilings, then validate
+durable-data recovery.
+The aggregate `image` job fails unless
 every native image job succeeds. Each image job acquires the architecture's
 committed lock, verifies the bundle and full key fingerprints, pre-pulls only
 the digest-pinned bases, and performs a clean build with network access and

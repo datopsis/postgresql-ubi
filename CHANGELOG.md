@@ -37,3 +37,9 @@ but container releases use the upstream-derived format documented in
 - Added schema-defined AMD64 and ARM64 artifact locks for the complete runtime
   RPM and source closure, fail-closed acquisition and publisher verification,
   a manual lock-update workflow, and network-disabled offline assembly.
+- Added the PostgreSQL authentication, initialization, immutable configuration,
+  storage, crash-recovery, backup/restore, minor-update, TLS, resource-limit,
+  logging, and probe runtime contract with native architecture tests.
+- Added executable deployment guidance for fixed and arbitrary identities,
+  Podman, Docker and Compose, named and bind-mounted storage, TLS and isolated
+  non-TLS networks, controlled transfer, operations, recovery, and teardown.

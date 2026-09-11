@@ -33,13 +33,21 @@ The current development image provides:
   authentication;
 - a persistent data volume with read-only-root compatibility;
 - dropped-capability and `no-new-privileges` operation; and
-- stateful smoke tests for initialization, authentication, persistence,
+- native stateful tests for secure initialization and configuration, TLS,
+  resource exhaustion/recovery, persistence, backup/restore, minor updates,
   shutdown, arbitrary UIDs, and incompatible data directories.
 
 Architecture-specific locks now cover the complete binary dependency closure,
 publisher keys, source RPMs, and digest-pinned UBI inputs. Artifact acquisition
 is separate from a network-disabled, pull-disabled container build; see the
 [artifact acquisition contract](docs/ARTIFACT-ACQUISITION.md).
+
+Detailed procedures for choosing, deploying, verifying, operating, updating,
+recovering, and safely removing each intended profile are in the
+[deployment and operations guide](docs/DEPLOYMENT.md). The
+[runtime security contract](docs/RUNTIME-SECURITY.md) and
+[storage, backup, and upgrade guide](docs/STORAGE.md) define the associated
+security and data-lifecycle boundaries.
 
 ## Approved first-release boundary
 
