@@ -36,10 +36,10 @@ The current development image provides:
 - stateful smoke tests for initialization, authentication, persistence,
   shutdown, arbitrary UIDs, and incompatible data directories.
 
-The current builder still resolves the locked package version from public
-repositories. Network-disabled assembly from a checked artifact lock remains a
-first-release gate; see [the roadmap](docs/ROADMAP.md) and
-[package-source decision](docs/PACKAGE-SOURCE.md).
+Architecture-specific locks now cover the complete binary dependency closure,
+publisher keys, source RPMs, and digest-pinned UBI inputs. Artifact acquisition
+is separate from a network-disabled, pull-disabled container build; see the
+[artifact acquisition contract](docs/ARTIFACT-ACQUISITION.md).
 
 ## Approved first-release boundary
 
@@ -63,18 +63,24 @@ the roadmap explicitly records later qualification. See the complete
 Build and run the restricted-runtime test suite with rootless Podman:
 
 ```console
-podman build --format docker --file Containerfile \
-  --tag localhost/postgresql-ubi9:development .
-CONTAINER_RUNTIME=podman IMAGE=localhost/postgresql-ubi9:development \
+CONTAINER_RUNTIME=podman IMAGE=localhost/postgresql-ubi:development \
+  bash scripts/build-offline.sh
+CONTAINER_RUNTIME=podman IMAGE=localhost/postgresql-ubi:development \
   bash tests/smoke.sh
 ```
+
+The preparation command requires Python 3, GnuPG, and rootless Podman. It
+downloads only the current native architecture's committed artifacts, verifies
+their exact bytes and publisher identities, pre-pulls the locked bases, and
+then assembles with networking and further image pulls disabled. Remove the
+ignored `.artifact-bundle/` directory before intentionally reacquiring it.
 
 Start the Compose development service by supplying its secret from the host
 environment:
 
 ```console
 export POSTGRES_PASSWORD='replace-with-a-development-secret'
-podman compose up --build
+podman compose up
 ```
 
 The service listens only on `127.0.0.1:5432`. Remove the development volume

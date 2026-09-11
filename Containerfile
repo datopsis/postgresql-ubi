@@ -12,6 +12,7 @@ ARG ARTIFACT_LOCK_SHA256
 COPY .artifact-bundle/${TARGETARCH}/ /tmp/artifacts/
 COPY --chmod=0755 scripts/verify-rpm-bundle.sh /usr/local/bin/verify-rpm-bundle
 COPY --from=runtime-base / /final/
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # The bundle is acquired and hash/fingerprint verified before this build. The
 # build rechecks its selected lock, exact RPM metadata, and signatures without
@@ -41,6 +42,8 @@ RUN test -n "${ARTIFACT_LOCK_SHA256}" \
         /final/var/cache/yum \
         /final/var/log/* \
         /final/var/tmp/* \
+    && find /final -xdev -type f -perm /6000 -exec chmod a-s {} + \
+    && ! find /final -xdev -type f -perm -0002 -print -quit | grep -q . \
     && mkdir -p /final/var/lib/pgsql \
     && chown -R 26:0 /final/var/lib/pgsql \
     && chmod 2775 /final/var/lib/pgsql

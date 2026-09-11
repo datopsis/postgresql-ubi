@@ -18,7 +18,7 @@ test -f "${lock}"
 test ! -e "${bundle}"
 
 python3 scripts/artifacts.py acquire --lock "${lock}" --output "${bundle}"
-scripts/verify-key-fingerprints.sh "${bundle}"
+bash scripts/verify-key-fingerprints.sh "${bundle}"
 lock_sha=$(sha256sum "${lock}" | cut -d' ' -f1)
 builder=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["base_images"]["builder"]["reference"])' "${lock}")
 runtime_base=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["base_images"]["runtime"]["reference"])' "${lock}")

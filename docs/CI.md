@@ -3,7 +3,10 @@
 CI runs repository validation, configuration scanning, native AMD64 and ARM64
 image builds, restricted-runtime smoke tests, Trivy and Grype vulnerability
 gates, and Syft SPDX SBOM generation. The aggregate `image` job fails unless
-every native image job succeeds.
+every native image job succeeds. Each image job acquires the architecture's
+committed lock, verifies the bundle and full key fingerprints, pre-pulls only
+the digest-pinned bases, and performs a clean build with network access and
+additional pulls disabled.
 
 ## Local repository checks
 
@@ -16,9 +19,9 @@ pre-commit run --all-files --show-diff-on-failure
 ## Local image checks
 
 ```console
-podman build --format docker --file Containerfile \
-  --tag localhost/postgresql-ubi9:development .
-CONTAINER_RUNTIME=podman IMAGE=localhost/postgresql-ubi9:development \
+CONTAINER_RUNTIME=podman IMAGE=localhost/postgresql-ubi:development \
+  bash scripts/build-offline.sh
+CONTAINER_RUNTIME=podman IMAGE=localhost/postgresql-ubi:development \
   bash tests/smoke.sh
 ```
 

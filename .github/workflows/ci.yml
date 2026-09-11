@@ -129,6 +129,8 @@ jobs:
             test ! -e /var/cache/dnf
             test ! -e /var/cache/yum
             test -z "$(find / -xdev -type f \( -name "*RPM-GPG-KEY*" -o -name "*.repo" \) -print -quit)"
+            test -z "$(find / -xdev -type f -perm /6000 -print -quit)"
+            test -z "$(find / -xdev -type f -perm -0002 -print -quit)"
           '
 
       - name: Confirm loaded image architecture

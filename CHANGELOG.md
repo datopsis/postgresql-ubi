@@ -34,3 +34,6 @@ but container releases use the upstream-derived format documented in
   withdrawal handling, and accountable ownership.
 - Added the release qualification evidence schema and a public-badge policy
   that prohibits unsupported security, platform, or certification claims.
+- Added schema-defined AMD64 and ARM64 artifact locks for the complete runtime
+  RPM and source closure, fail-closed acquisition and publisher verification,
+  a manual lock-update workflow, and network-disabled offline assembly.

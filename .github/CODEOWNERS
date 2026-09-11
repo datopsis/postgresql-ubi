@@ -2,7 +2,9 @@
 
 /.github/ @joey-huckabee
 /Containerfile @joey-huckabee
+/artifacts/ @joey-huckabee
 /container/ @joey-huckabee
+/scripts/ @joey-huckabee
 /SECURITY.md @joey-huckabee
 /docs/ARTIFACT-ACQUISITION.md @joey-huckabee
 /docs/MAINTENANCE.md @joey-huckabee

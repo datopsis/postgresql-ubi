@@ -14,6 +14,7 @@ not imply separation of duties that the project does not yet have.
 | Image and PostgreSQL 18 maintenance | `@joey-huckabee` | Approve input changes, compatibility decisions, and supported-release updates. |
 | PostgreSQL and PGDG security triage | `@joey-huckabee` | Review PostgreSQL security notices, release notes, PGDG packaging, source RPMs, and fixes. |
 | UBI security triage | `@joey-huckabee` | Review Red Hat errata, base manifests, runtime RPM changes, and rebuild need. |
+| Source and redistribution review | `@joey-huckabee` | Confirm each binary-to-source mapping, source availability, included licenses, UBI redistribution terms, and trademark boundaries on every lock change. |
 | Artifact and signing-key policy | `@joey-huckabee` | Approve key additions, rotations, revocations, mirrors, and lock changes with fingerprint evidence. |
 | Vulnerability reports and disclosure | `@joey-huckabee` | Monitor private advisories, acknowledge reports, coordinate suppliers, and publish advisories. |
 | Release approval and GHCR administration | `@joey-huckabee` | Approve the candidate, protect immutable identity, publish or withdraw releases, and verify public artifacts. |
