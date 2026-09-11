@@ -28,6 +28,7 @@ cleanup() {
     "${runtime}" volume rm --force "${volumes[@]}" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
+trap 'status=$?; printf "storage-lifecycle failed at line %s\n" "${LINENO}" >&2; exit "${status}"' ERR
 
 remember() {
     containers+=("$1")
