@@ -69,6 +69,9 @@ wait_ready() {
 database="${prefix}-database"
 run_limited "${database}" --env "POSTGRES_PASSWORD=${password}"
 wait_ready "${database}"
+test "$("${runtime}" exec "${database}" sh -c 'ulimit -n')" = 256
+test "$("${runtime}" exec "${database}" cat /sys/fs/cgroup/pids.max)" = 128
+test "$("${runtime}" exec "${database}" cat /sys/fs/cgroup/memory.max)" = 402653184
 
 "${runtime}" exec "${database}" psql --host=/tmp --username=postgres \
     --set=ON_ERROR_STOP=1 \
@@ -121,20 +124,23 @@ oom_before=$("${runtime}" exec "${database}" awk '$1 == "oom" { print $2 }' \
     /sys/fs/cgroup/memory.events)
 "${runtime}" exec "${database}" dd if=/dev/zero of=/tmp/memory-pressure \
     bs=1M count=640 status=none >/dev/null 2>&1 || true
-if test "$("${runtime}" inspect --format '{{.State.Running}}' "${database}")" = true; then
-    # shellcheck disable=SC2016
-    oom_after=$("${runtime}" exec "${database}" awk '$1 == "oom" { print $2 }' \
-        /sys/fs/cgroup/memory.events)
+# The postmaster can begin its safety shutdown between an inspect and exec, so
+# collect in-cgroup evidence opportunistically and use stopped-state/log
+# evidence when the cgroup has already gone away.
+# shellcheck disable=SC2016
+oom_after=$("${runtime}" exec "${database}" awk '$1 == "oom" { print $2 }' \
+    /sys/fs/cgroup/memory.events 2>/dev/null || true)
+if [[ "${oom_after}" =~ ^[0-9]+$ ]]; then
     test "${oom_after}" -gt "${oom_before}"
+else
+    database_logs=$("${runtime}" logs "${database}" 2>&1)
+    grep -Eq 'terminated by signal 9|out of memory|oom-kill' <<<"${database_logs}"
+fi
+if test "$("${runtime}" inspect --format '{{.State.Running}}' "${database}")" = true; then
     "${runtime}" exec "${database}" rm -f /tmp/memory-pressure || true
     wait_ready "${database}"
-    "${runtime}" stop --time 30 "${database}" >/dev/null
-else
-    if test "$("${runtime}" inspect --format '{{.State.OOMKilled}}' "${database}")" != true; then
-        database_logs=$("${runtime}" logs "${database}" 2>&1)
-        grep -Eq 'terminated by signal 9|out of memory|oom-kill' <<<"${database_logs}"
-    fi
 fi
+"${runtime}" stop --time 30 "${database}" >/dev/null 2>&1 || true
 "${runtime}" rm "${database}" >/dev/null
 
 recovered="${prefix}-recovered"

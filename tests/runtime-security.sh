@@ -6,6 +6,7 @@ image=${IMAGE:-localhost/postgresql-ubi:development}
 prefix="postgresql-ubi-security-${RANDOM}-$$"
 password='Odd !@#$%^&*()[]{}:;,.?=+_- value'
 rotated='Rotated !@#$%^&*()[]{}:;,.?=+_- value'
+sensitive_value='person-for-log-test@example.invalid'
 data_volume="${prefix}-data"
 secret_volume="${prefix}-secrets"
 config_volume="${prefix}-config"
@@ -177,6 +178,8 @@ fi
     --set=ON_ERROR_STOP=1 --command="CREATE ROLE app LOGIN PASSWORD '${rotated}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;" \
     --command='CREATE TABLE role_probe(value integer);' \
     --command='GRANT SELECT ON role_probe TO app;' >/dev/null
+"${runtime}" exec "${primary}" psql --host=/tmp --username=postgres \
+    --command="SELECT '${sensitive_value}';" >/dev/null
 test "$("${runtime}" exec --env "PGPASSWORD=${rotated}" "${primary}" \
     psql -qAt --host=127.0.0.1 --username=app --dbname=postgres \
     --command='SELECT count(*) FROM role_probe;')" = 0
@@ -204,6 +207,12 @@ fi
 test "$("${runtime}" exec --env "PGPASSWORD=${password}" "${primary}" \
     psql -qAt --host=127.0.0.1 --username=app --dbname=postgres \
     --command='SELECT 1')" = 1
+primary_logs=$("${runtime}" logs "${primary}" 2>&1)
+if grep -Fq "${rotated}" <<<"${primary_logs}" || \
+    grep -Fq "${sensitive_value}" <<<"${primary_logs}"; then
+    echo 'credential or personal-data fixture exposed in database logs' >&2
+    exit 1
+fi
 
 # Persisted attempts to weaken HBA are replaced at the next start.
 # PGDATA expands inside the database container.
@@ -220,6 +229,8 @@ run_restricted "${configured}" "${data_volume}" \
     --container-command postgres -c password_encryption=md5 -c log_statement=all \
     -c hba_file=/tmp/untrusted-hba -c ssl=on
 wait_ready "${configured}" "${password}"
+"${runtime}" exec "${configured}" psql --host=/tmp --username=postgres \
+    --command="SELECT '${sensitive_value}';" >/dev/null
 for expectation in \
     'max_connections|37' \
     'password_encryption|scram-sha-256' \
@@ -241,8 +252,9 @@ host all all 0.0.0.0/0 scram-sha-256
 host all all ::/0 scram-sha-256"
 
 configured_logs=$("${runtime}" logs "${configured}" 2>&1)
-if grep -Fq "${rotated}" <<<"${configured_logs}"; then
-    echo 'SQL value exposed in database logs' >&2
+if grep -Fq "${rotated}" <<<"${configured_logs}" || \
+    grep -Fq "${sensitive_value}" <<<"${configured_logs}"; then
+    echo 'credential or personal-data fixture exposed in database logs' >&2
     exit 1
 fi
 
