@@ -41,6 +41,15 @@ jobs:
       - name: Run repository checks
         run: pre-commit run --all-files --show-diff-on-failure
 
+      - name: Run artifact lock negative tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Validate committed artifact locks
+        run: |
+          python scripts/artifacts.py validate-inputs artifacts/lock-inputs.json
+          python scripts/artifacts.py validate-lock artifacts/locks/amd64.json
+          python scripts/artifacts.py validate-lock artifacts/locks/arm64.json
+
       - name: Audit GitHub Actions security
         uses: zizmorcore/zizmor-action@70fb788f84895a7701f5643d103d587e460b5c99 # v0.6.3
         with:
@@ -89,6 +98,7 @@ jobs:
     env:
       TEST_IMAGE: localhost/postgresql-ubi9:test-${{ matrix.architecture }}
       SBOM_FILE: postgresql-ubi9-${{ matrix.architecture }}.spdx.json
+      PROVENANCE_FILE: provenance-${{ matrix.architecture }}.json
       GRYPE_SARIF: grype-${{ matrix.architecture }}.sarif
       GRYPE_ALL: grype-all-${{ matrix.architecture }}.json
     steps:
@@ -99,23 +109,46 @@ jobs:
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+        with:
+          driver: docker
 
       - name: Confirm native runner architecture
         env:
           EXPECTED_MACHINE: ${{ matrix.machine }}
         run: test "$(uname -m)" = "${EXPECTED_MACHINE}"
 
-      - name: Build test image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          file: Containerfile
-          platforms: ${{ matrix.platform }}
-          load: true
-          push: false
-          tags: ${{ env.TEST_IMAGE }}
-          cache-from: type=gha,scope=image-${{ matrix.architecture }}
-          cache-to: type=gha,mode=max,scope=image-${{ matrix.architecture }}
+      - name: Acquire, verify, and build from the locked bundle
+        env:
+          BUILD_METADATA_FILE: ${{ env.PROVENANCE_FILE }}
+          BUILDX_METADATA_PROVENANCE: min
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.TEST_IMAGE }}
+        run: bash scripts/build-offline.sh
+
+      - name: Prove acquisition material is absent from the final image
+        run: |
+          if docker history --no-trunc --format '{{.CreatedBy}}' "${TEST_IMAGE}" | grep -E 'https?://|RPM-GPG-KEY|/tmp/artifacts'; then
+            echo 'forbidden acquisition material found in final image history' >&2
+            exit 1
+          fi
+          test -s "${PROVENANCE_FILE}"
+          if grep -E 'download[.]postgresql[.]org|dnf-srpms[.]postgresql[.]org|cdn-ubi[.]redhat[.]com|security[.]access[.]redhat[.]com|RPM-GPG-KEY|[.]artifact-bundle|/tmp/artifacts' "${PROVENANCE_FILE}"; then
+            echo 'forbidden acquisition material found in build provenance' >&2
+            exit 1
+          fi
+          docker run --rm --user 0 --entrypoint /bin/sh "${TEST_IMAGE}" -ec '
+            for path in /etc/dnf /etc/pki/entitlement /etc/pki/rpm-gpg /etc/rhsm /etc/yum.repos.d /var/cache/dnf /var/cache/yum; do
+              if test -e "${path}"; then
+                echo "forbidden final-image path: ${path}" >&2
+                exit 1
+              fi
+            done
+            if find / -xdev -type f \( -name "*RPM-GPG-KEY*" -o -name "*.repo" -o -perm /6000 -o -perm -0002 \) -print -quit | grep -q .; then
+              echo "forbidden key, repository, privilege, or writable file found" >&2
+              find / -xdev -type f \( -name "*RPM-GPG-KEY*" -o -name "*.repo" -o -perm /6000 -o -perm -0002 \) -print >&2
+              exit 1
+            fi
+          '
 
       - name: Confirm loaded image architecture
         env:
@@ -149,6 +182,12 @@ jobs:
           upload-artifact: false
           upload-release-assets: false
 
+      - name: Prove acquisition material is absent from the SBOM
+        run: >-
+          test -z "$(grep -E
+          'download[.]postgresql[.]org|dnf-srpms[.]postgresql[.]org|cdn-ubi[.]redhat[.]com|security[.]access[.]redhat[.]com|RPM-GPG-KEY|[.]artifact-bundle|/tmp/artifacts'
+          "${SBOM_FILE}" || true)"
+
       - name: Scan Syft SBOM with Grype
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         with:
@@ -181,6 +220,7 @@ jobs:
           name: image-security-${{ github.sha }}-${{ matrix.architecture }}
           path: |
             ${{ env.SBOM_FILE }}
+            ${{ env.PROVENANCE_FILE }}
             ${{ env.GRYPE_SARIF }}
             ${{ env.GRYPE_ALL }}
           if-no-files-found: warn

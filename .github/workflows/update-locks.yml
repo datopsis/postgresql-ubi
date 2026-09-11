@@ -1,0 +1,74 @@
+name: Propose artifact lock update
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: resolve candidate (${{ matrix.architecture }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: amd64
+            runner: ubuntu-24.04
+            platform: linux/amd64
+          - architecture: arm64
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate reviewed lock inputs
+        run: python scripts/artifacts.py validate-inputs artifacts/lock-inputs.json
+
+      - name: Acquire PostgreSQL seeds and approved keys
+        env:
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: >-
+          python scripts/artifacts.py acquire-inputs
+          --inputs artifacts/lock-inputs.json
+          --architecture "${ARCHITECTURE}"
+          --output resolution-inputs
+
+      - name: Resolve and inspect the complete RPM closure
+        env:
+          ARCHITECTURE: ${{ matrix.architecture }}
+          PLATFORM: ${{ matrix.platform }}
+          UBI_MINIMAL: registry.access.redhat.com/ubi9/ubi-minimal:9.8@sha256:7fbeae18dc9476399f565e68255f602a3374ea8614ba3d14843565131a13ff93
+        run: >-
+          docker run --rm --platform "${PLATFORM}"
+          --volume "${PWD}:/work" --workdir /work
+          "${UBI_MINIMAL}" bash scripts/resolve-lock.sh
+          "${ARCHITECTURE}" /work/resolution-inputs /work/resolution-output
+
+      - name: Render and validate candidate lock
+        env:
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          python scripts/render-lock.py \
+            --inputs artifacts/lock-inputs.json \
+            --architecture "${ARCHITECTURE}" \
+            --binary-inventory resolution-output/binary-inventory.tsv \
+            --source-inventory resolution-output/source-inventory.tsv \
+            --output "${ARCHITECTURE}.lock.json"
+          python scripts/artifacts.py validate-lock "${ARCHITECTURE}.lock.json"
+
+      - name: Retain candidate for maintainer review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: artifact-lock-candidate-${{ matrix.architecture }}
+          path: |
+            ${{ matrix.architecture }}.lock.json
+            resolution-output/binary-inventory.tsv
+            resolution-output/source-inventory.tsv
+          if-no-files-found: error
+          retention-days: 7

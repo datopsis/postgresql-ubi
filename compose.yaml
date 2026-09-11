@@ -1,9 +1,6 @@
 services:
   postgresql:
-    image: localhost/postgresql-ubi9:development
-    build:
-      context: .
-      dockerfile: Containerfile
+    image: localhost/postgresql-ubi:development
     environment:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres-password
     secrets:

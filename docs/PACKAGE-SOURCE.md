@@ -4,8 +4,8 @@
 
 Use the PostgreSQL Global Development Group's official PGDG RPM repository for
 PostgreSQL 18 while retaining digest-pinned Red Hat UBI 9 Minimal and Micro base
-images. Pin the exact RPM epoch, version, release, architecture, dependency
-closure, repository package, checksums, and signing identity.
+images. Pin the exact RPM epoch, version, release, architecture, complete
+dependency closure, checksums, source RPMs, and signing identity.
 
 An inspection on 2026-09-11 found that the public UBI 9.8 repositories expose
 PostgreSQL 13.23 but not the PostgreSQL 18 stream. The PGDG RHEL 9 repository
@@ -24,17 +24,12 @@ x86_64: D4BF 08AE 67A0 B4C7 A1DB CCD2 40BC A2B4 08B4 0D20
 aarch64: B031 F89F C983 E982 6290 6B6E 177B 343B B973 8825
 ```
 
-These are observed development inputs, not a permanent lock or release claim.
-The first release requires equivalent availability and native tests on AMD64
-and ARM64 plus an external artifact lock and network-disabled assembly.
-
-The development build downloads the three architecture-specific PostgreSQL RPMs
-directly from the PGDG 18 directory. Each URL and SHA-256 digest is explicit in
-the Containerfile. The architecture-specific PGDG signing keys are also
-checksum-pinned, their fingerprints are documented above, and every RPM
-signature is checked before installation.
-This avoids mutable PGDG repository metadata influencing the package selection;
-DNF resolves only the remaining dependencies from the UBI repositories.
+The reviewed locks in `artifacts/locks/` record these identities plus every UBI
+runtime dependency and corresponding source RPM. Only the manual
+`update-locks.yml` workflow resolves repository metadata. Ordinary builds
+download exact locked files outside the container build, verify hashes,
+signatures, fingerprints, metadata, architecture, and source correspondence,
+then install the complete local transaction without DNF or repository access.
 
 ## Supplier boundary
 
