@@ -9,3 +9,8 @@ cosign.bundle
 __pycache__/
 .pytest_cache/
 
+# Local database and secret material
+data/
+secrets/
+*.key
+*.pem
