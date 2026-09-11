@@ -8,6 +8,7 @@ cosign.bundle
 .venv/
 __pycache__/
 .pytest_cache/
+.artifact-bundle/
 
 # Local database and secret material
 data/

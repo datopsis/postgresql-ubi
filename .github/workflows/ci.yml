@@ -41,6 +41,15 @@ jobs:
       - name: Run repository checks
         run: pre-commit run --all-files --show-diff-on-failure
 
+      - name: Run artifact lock negative tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Validate committed artifact locks
+        run: |
+          python scripts/artifacts.py validate-inputs artifacts/lock-inputs.json
+          python scripts/artifacts.py validate-lock artifacts/locks/amd64.json
+          python scripts/artifacts.py validate-lock artifacts/locks/arm64.json
+
       - name: Audit GitHub Actions security
         uses: zizmorcore/zizmor-action@70fb788f84895a7701f5643d103d587e460b5c99 # v0.6.3
         with:
@@ -97,25 +106,30 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Buildx
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
-
       - name: Confirm native runner architecture
         env:
           EXPECTED_MACHINE: ${{ matrix.machine }}
         run: test "$(uname -m)" = "${EXPECTED_MACHINE}"
 
-      - name: Build test image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          file: Containerfile
-          platforms: ${{ matrix.platform }}
-          load: true
-          push: false
-          tags: ${{ env.TEST_IMAGE }}
-          cache-from: type=gha,scope=image-${{ matrix.architecture }}
-          cache-to: type=gha,mode=max,scope=image-${{ matrix.architecture }}
+      - name: Acquire, verify, and build from the locked bundle
+        env:
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.TEST_IMAGE }}
+        run: bash scripts/build-offline.sh
+
+      - name: Prove acquisition material is absent from the final image
+        run: |
+          test -z "$(docker history --no-trunc --format '{{.CreatedBy}}' "${TEST_IMAGE}" | grep -E 'https?://|RPM-GPG-KEY|/tmp/artifacts' || true)"
+          docker run --rm --entrypoint /bin/sh "${TEST_IMAGE}" -ec '
+            test ! -e /etc/dnf
+            test ! -e /etc/pki/entitlement
+            test ! -e /etc/pki/rpm-gpg
+            test ! -e /etc/rhsm
+            test ! -e /etc/yum.repos.d
+            test ! -e /var/cache/dnf
+            test ! -e /var/cache/yum
+            test -z "$(find / -xdev -type f \( -name "*RPM-GPG-KEY*" -o -name "*.repo" \) -print -quit)"
+          '
 
       - name: Confirm loaded image architecture
         env:

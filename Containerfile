@@ -3,82 +3,53 @@
 ARG UBI_MINIMAL_IMAGE="registry.access.redhat.com/ubi9/ubi-minimal:9.8@sha256:7fbeae18dc9476399f565e68255f602a3374ea8614ba3d14843565131a13ff93"
 ARG UBI_MICRO_IMAGE="registry.access.redhat.com/ubi9/ubi-micro:9.8@sha256:f332c99eb8f798a8486821c91937f10ad64ee83d7e739303be2df051040918f6"
 
-FROM scratch AS pgdg-artifacts-amd64
-
-ADD --checksum=sha256:ae57ba32d87fa3c311da9545bc85682ae04dc41cfbabf60d7f6c185099604f8a \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-18.6-1PGDG.rhel9.8.x86_64.rpm /postgresql18.rpm
-ADD --checksum=sha256:7a4d55c02b8bab1b359aa25ce53d81db77cd39026a980dd8f0210031a5c31654 \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-libs-18.6-1PGDG.rhel9.8.x86_64.rpm /postgresql18-libs.rpm
-ADD --checksum=sha256:f7f1915d63756f6a37f3f2e5cc84d03893d0d7a55dab8ac350871bd1c48a0754 \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-server-18.6-1PGDG.rhel9.8.x86_64.rpm /postgresql18-server.rpm
-
-FROM scratch AS pgdg-artifacts-arm64
-
-ADD --checksum=sha256:3ec399a4d57b43cbba03f610adc4a4c6daaea0dc8b4f3d73175b1dedf7e2bddf \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-18.6-1PGDG.rhel9.8.aarch64.rpm /postgresql18.rpm
-ADD --checksum=sha256:662bac810d50ece9d32f7ab6960f01e8e1416cc0a0634a4ea7f7ec8ea744146b \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-libs-18.6-1PGDG.rhel9.8.aarch64.rpm /postgresql18-libs.rpm
-ADD --checksum=sha256:761001b6e560041f2f6f0d7abe9e57b30a98a2c039b81682d77969928a366add \
-    https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-aarch64/postgresql18-server-18.6-1PGDG.rhel9.8.aarch64.rpm /postgresql18-server.rpm
-
-ARG TARGETARCH
-# The selected scratch stage contains checksum-pinned artifacts only.
-# hadolint ignore=DL3006
-FROM pgdg-artifacts-${TARGETARCH} AS pgdg-artifacts
-
-FROM scratch AS pgdg-key
-
-ADD --checksum=sha256:a70c9527426017d00fa4e6f9d2941d515357a27a7be82e155248ece53bbe5453 \
-    https://download.postgresql.org/pub/repos/yum/keys/PGDG-RPM-GPG-KEY-RHEL /PGDG-RPM-GPG-KEY-RHEL
-ADD --checksum=sha256:cc506fa92aa97e8e58f88551a2ec99a61d9d603f7f2c1ae0c06191f58c29979f \
-    https://download.postgresql.org/pub/repos/yum/keys/PGDG-RPM-GPG-KEY-AARCH64-RHEL /PGDG-RPM-GPG-KEY-AARCH64-RHEL
+FROM ${UBI_MICRO_IMAGE} AS runtime-base
 
 FROM ${UBI_MINIMAL_IMAGE} AS builder
 
-COPY --from=pgdg-artifacts / /tmp/pgdg/
-COPY --from=pgdg-key /PGDG-RPM-GPG-KEY-RHEL /PGDG-RPM-GPG-KEY-AARCH64-RHEL /tmp/pgdg/
+ARG TARGETARCH
+ARG ARTIFACT_LOCK_SHA256
+COPY .artifact-bundle/${TARGETARCH}/ /tmp/artifacts/
+COPY --chmod=0755 scripts/verify-rpm-bundle.sh /usr/local/bin/verify-rpm-bundle
+COPY --from=runtime-base / /final/
 
-# PostgreSQL artifacts and their signing key are checksum-pinned above. RPM
-# signatures are then verified before DNF resolves only their UBI dependencies.
-# The first release must also lock that dependency closure and assemble without
-# network access as defined in docs/ROADMAP.md.
-# hadolint ignore=DL3041
-RUN microdnf install -y dnf \
-    && rpm --import \
-        /tmp/pgdg/PGDG-RPM-GPG-KEY-RHEL \
-        /tmp/pgdg/PGDG-RPM-GPG-KEY-AARCH64-RHEL \
-    && rpm --checksig /tmp/pgdg/*.rpm \
+# The bundle is acquired and hash/fingerprint verified before this build. The
+# build rechecks its selected lock, exact RPM metadata, and signatures without
+# contacting repositories or resolving dependencies.
+RUN test -n "${ARTIFACT_LOCK_SHA256}" \
+    && test "$(cat /tmp/artifacts/LOCK-SHA256)" = "${ARTIFACT_LOCK_SHA256}" \
+    && verify-rpm-bundle /tmp/artifacts \
     && mkdir -p /runtime \
     && rpm --root /runtime --initdb \
-    && rpm --root /runtime --import \
-        /tmp/pgdg/PGDG-RPM-GPG-KEY-RHEL \
-        /tmp/pgdg/PGDG-RPM-GPG-KEY-AARCH64-RHEL \
-    && dnf install -y \
-        --installroot=/runtime \
-        --releasever=9 \
-        --setopt=localpkg_gpgcheck=1 \
-        --setopt=install_weak_deps=0 \
-        --setopt=keepcache=0 \
-        /tmp/pgdg/postgresql18.rpm \
-        /tmp/pgdg/postgresql18-libs.rpm \
-        /tmp/pgdg/postgresql18-server.rpm \
-        ca-certificates nss_wrapper tzdata \
-    && dnf clean all \
-    && microdnf clean all \
+    && rpm --root /runtime --import /tmp/artifacts/keys/* \
+    && rpm --root /runtime --install /tmp/artifacts/rpms/*.rpm \
+    && rpm --root /runtime --query 'gpg-pubkey*' \
+        --qf '%{NAME}-%{VERSION}-%{RELEASE}\n' > /tmp/imported-keys \
+    && while IFS= read -r key; do \
+        rpm --root /runtime --erase "${key}"; \
+    done < /tmp/imported-keys \
+    && cp -a /runtime/. /final/ \
     && rm -rf \
-        /runtime/run/* \
-        /runtime/tmp/* \
-        /runtime/var/cache/dnf \
-        /runtime/var/log/* \
-        /runtime/var/tmp/* \
-    && mkdir -p /runtime/var/lib/pgsql \
-    && chown -R 26:0 /runtime/var/lib/pgsql \
-    && chmod 2775 /runtime/var/lib/pgsql
+        /final/etc/dnf \
+        /final/etc/pki/entitlement \
+        /final/etc/pki/rpm-gpg \
+        /final/etc/rhsm \
+        /final/etc/yum.repos.d \
+        /final/run/* \
+        /final/tmp/* \
+        /final/var/cache/dnf \
+        /final/var/cache/yum \
+        /final/var/log/* \
+        /final/var/tmp/* \
+    && mkdir -p /final/var/lib/pgsql \
+    && chown -R 26:0 /final/var/lib/pgsql \
+    && chmod 2775 /final/var/lib/pgsql
 
-FROM ${UBI_MICRO_IMAGE}
+FROM scratch
 
 ARG POSTGRESQL_VERSION="18.6"
 ARG POSTGRESQL_RPM_VERSION="18.6-1PGDG.rhel9.8"
+ARG ARTIFACT_LOCK_SHA256
 
 LABEL org.opencontainers.image.title="PostgreSQL on Red Hat UBI 9" \
       org.opencontainers.image.description="A security-oriented, rootless PostgreSQL image built on Red Hat UBI 9 Micro" \
@@ -87,9 +58,10 @@ LABEL org.opencontainers.image.title="PostgreSQL on Red Hat UBI 9" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.vendor="Datopsis" \
       org.opencontainers.image.version="${POSTGRESQL_VERSION}" \
-      io.datopsis.postgresql.rpm-version="${POSTGRESQL_RPM_VERSION}"
+      io.datopsis.postgresql.rpm-version="${POSTGRESQL_RPM_VERSION}" \
+      io.datopsis.artifact-lock.sha256="${ARTIFACT_LOCK_SHA256}"
 
-COPY --from=builder /runtime/ /
+COPY --from=builder /final/ /
 COPY --chown=0:0 --chmod=0755 container/entrypoint.sh /usr/local/bin/postgresql-entrypoint
 
 ENV LANG="C.UTF-8" \

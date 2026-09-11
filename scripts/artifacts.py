@@ -330,7 +330,7 @@ def lock_files(lock: dict, include_sources: bool) -> list[tuple[str, dict]]:
 def verify_bundle(lock_path: Path, bundle: Path, include_sources: bool) -> None:
     lock = validate_lock(lock_path)
     expected = {relative for relative, _ in lock_files(lock, include_sources)}
-    expected.update({"LOCK-SHA256", "rpm-manifest.tsv"})
+    expected.update({"LOCK-SHA256", "key-manifest.tsv", "rpm-manifest.tsv"})
     actual = {
         path.relative_to(bundle).as_posix()
         for path in bundle.rglob("*")
@@ -352,6 +352,15 @@ def verify_bundle(lock_path: Path, bundle: Path, include_sources: bool) -> None:
     expected_manifest = rpm_manifest(lock)
     if (bundle / "rpm-manifest.tsv").read_text(encoding="utf-8") != expected_manifest:
         fail("bundle RPM manifest does not match the selected lock")
+    if (bundle / "key-manifest.tsv").read_text(encoding="utf-8") != key_manifest(lock):
+        fail("bundle key manifest does not match the selected lock")
+
+
+def key_manifest(lock: dict) -> str:
+    rows = []
+    for key in lock["signing_keys"]:
+        rows.append("\t".join([key["filename"], key["fingerprint"], key["sha256"]]))
+    return "\n".join(rows) + "\n"
 
 
 def rpm_manifest(lock: dict) -> str:
@@ -382,6 +391,7 @@ def acquire(lock_path: Path, output: Path, include_sources: bool) -> None:
             destination.parent.mkdir(parents=True, exist_ok=True)
             download(item["url"], destination, item.get("size"), item["sha256"])
         (temporary / "LOCK-SHA256").write_text(sha256_file(lock_path) + "\n", encoding="ascii")
+        (temporary / "key-manifest.tsv").write_text(key_manifest(lock), encoding="utf-8", newline="\n")
         (temporary / "rpm-manifest.tsv").write_text(rpm_manifest(lock), encoding="utf-8", newline="\n")
         verify_bundle(lock_path, temporary, include_sources)
         os.replace(temporary, output)
