@@ -33,7 +33,8 @@ The current development image provides:
   authentication;
 - a persistent data volume with read-only-root compatibility;
 - dropped-capability and `no-new-privileges` operation; and
-- stateful smoke tests for initialization, authentication, persistence,
+- native stateful tests for secure initialization and configuration, TLS,
+  resource exhaustion/recovery, persistence, backup/restore, minor updates,
   shutdown, arbitrary UIDs, and incompatible data directories.
 
 Architecture-specific locks now cover the complete binary dependency closure,
