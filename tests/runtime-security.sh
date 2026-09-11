@@ -82,7 +82,8 @@ expect_failure() {
         echo "expected ${name} to fail" >&2
         return 1
     fi
-    "${runtime}" logs "${name}" 2>&1 | grep -Fq "${expected}"
+    failure_logs=$("${runtime}" logs "${name}" 2>&1)
+    grep -Fq "${expected}" <<<"${failure_logs}"
 }
 
 seed_file() {
@@ -161,11 +162,13 @@ test "$("${runtime}" exec "${primary}" psql -qAt --host=/tmp --username=postgres
         exit 1
     fi
 '
-if "${runtime}" top "${primary}" | grep -Fq "${password}"; then
+process_list=$("${runtime}" top "${primary}")
+if grep -Fq "${password}" <<<"${process_list}"; then
     echo 'initialization credential exposed in process arguments' >&2
     exit 1
 fi
-if "${runtime}" logs "${primary}" 2>&1 | grep -Fq "${password}"; then
+primary_logs=$("${runtime}" logs "${primary}" 2>&1)
+if grep -Fq "${password}" <<<"${primary_logs}"; then
     echo 'initialization credential exposed in logs' >&2
     exit 1
 fi
@@ -237,7 +240,8 @@ local all all trust
 host all all 0.0.0.0/0 scram-sha-256
 host all all ::/0 scram-sha-256"
 
-if "${runtime}" logs "${configured}" 2>&1 | grep -Fq "${rotated}"; then
+configured_logs=$("${runtime}" logs "${configured}" 2>&1)
+if grep -Fq "${rotated}" <<<"${configured_logs}"; then
     echo 'SQL value exposed in database logs' >&2
     exit 1
 fi

@@ -76,7 +76,8 @@ wait_failed() {
     for _ in {1..60}; do
         if test "$("${runtime}" inspect --format '{{.State.Status}}' "${name}")" != running; then
             test "$("${runtime}" inspect --format '{{.State.ExitCode}}' "${name}")" != 0
-            if ! "${runtime}" logs "${name}" 2>&1 | grep -Fq "${expected}"; then
+            failure_logs=$("${runtime}" logs "${name}" 2>&1)
+            if ! grep -Fq "${expected}" <<<"${failure_logs}"; then
                 printf 'expected failure text not found: %s\n' "${expected}" >&2
                 "${runtime}" logs "${name}" >&2
                 return 1
@@ -143,8 +144,9 @@ row_count=$("${runtime}" exec "${recovered}" psql -qAt --host=/tmp --username=po
 test "${row_count}" -eq 30000 || test "${row_count}" -eq 90000
 test "$("${runtime}" exec "${recovered}" psql -qAt --host=/tmp --username=postgres \
     --command='SELECT pg_is_in_recovery();')" = f
-"${runtime}" logs "${recovered}" 2>&1 | grep -Eq \
-    'database system was interrupted|database system was not properly shut down|redo starts at'
+recovery_logs=$("${runtime}" logs "${recovered}" 2>&1)
+grep -Eq 'database system was interrupted|database system was not properly shut down|redo starts at' \
+    <<<"${recovery_logs}"
 
 # Logical backup and isolated restore validate schema, row count, and content.
 "${runtime}" run --rm --user 0 \
@@ -233,11 +235,11 @@ volumes+=("${concurrent_volume}")
 first="${prefix}-concurrent-one"
 second="${prefix}-concurrent-two"
 run_database "${first}" "${concurrent_volume}" \
-    --env "POSTGRES_PASSWORD=${password}" --env PATH=/hook:/usr/pgsql-18/bin:/usr/bin:/bin \
+    --env "POSTGRES_PASSWORD=${password}" --env PATH=/hook:/usr/local/bin:/usr/pgsql-18/bin:/usr/bin:/bin \
     --mount "type=volume,src=${hook_volume},dst=/hook,readonly"
 sleep 1
 run_database "${second}" "${concurrent_volume}" \
-    --env "POSTGRES_PASSWORD=${password}" --env PATH=/hook:/usr/pgsql-18/bin:/usr/bin:/bin \
+    --env "POSTGRES_PASSWORD=${password}" --env PATH=/hook:/usr/local/bin:/usr/pgsql-18/bin:/usr/bin:/bin \
     --mount "type=volume,src=${hook_volume},dst=/hook,readonly"
 wait_failed "${second}" 'initialization is already running'
 "${runtime}" stop --time 5 "${first}" >/dev/null || true
