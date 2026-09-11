@@ -207,7 +207,7 @@ remember "${readonly_data}"
     --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m,mode=1777 \
     --mount "type=volume,src=${data_volume},dst=/var/lib/pgsql,readonly" \
     --cap-drop ALL --security-opt "${no_new_privileges}" "${image}" >/dev/null
-wait_failed "${readonly_data}" 'PGDATA cannot accept a validation write'
+wait_failed "${readonly_data}" 'PGDATA is not writable'
 
 full="${prefix}-full"
 remember "${full}"
