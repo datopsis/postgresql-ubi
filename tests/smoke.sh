@@ -47,7 +47,7 @@ wait_for_postgresql() {
     local _
     for _ in {1..60}; do
         if "${runtime}" exec "${name}" \
-            pg_isready --quiet --host=/tmp --port=5432; then
+            pg_isready --quiet --host=127.0.0.1 --port=5432; then
             return
         fi
         sleep 1

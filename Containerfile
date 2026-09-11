@@ -30,11 +30,13 @@ FROM scratch AS pgdg-key
 
 ADD --checksum=sha256:a70c9527426017d00fa4e6f9d2941d515357a27a7be82e155248ece53bbe5453 \
     https://download.postgresql.org/pub/repos/yum/keys/PGDG-RPM-GPG-KEY-RHEL /PGDG-RPM-GPG-KEY-RHEL
+ADD --checksum=sha256:cc506fa92aa97e8e58f88551a2ec99a61d9d603f7f2c1ae0c06191f58c29979f \
+    https://download.postgresql.org/pub/repos/yum/keys/PGDG-RPM-GPG-KEY-AARCH64-RHEL /PGDG-RPM-GPG-KEY-AARCH64-RHEL
 
 FROM ${UBI_MINIMAL_IMAGE} AS builder
 
 COPY --from=pgdg-artifacts / /tmp/pgdg/
-COPY --from=pgdg-key /PGDG-RPM-GPG-KEY-RHEL /tmp/pgdg/PGDG-RPM-GPG-KEY-RHEL
+COPY --from=pgdg-key /PGDG-RPM-GPG-KEY-RHEL /PGDG-RPM-GPG-KEY-AARCH64-RHEL /tmp/pgdg/
 
 # PostgreSQL artifacts and their signing key are checksum-pinned above. RPM
 # signatures are then verified before DNF resolves only their UBI dependencies.
@@ -42,11 +44,15 @@ COPY --from=pgdg-key /PGDG-RPM-GPG-KEY-RHEL /tmp/pgdg/PGDG-RPM-GPG-KEY-RHEL
 # network access as defined in docs/ROADMAP.md.
 # hadolint ignore=DL3041
 RUN microdnf install -y dnf \
-    && rpm --import /tmp/pgdg/PGDG-RPM-GPG-KEY-RHEL \
+    && rpm --import \
+        /tmp/pgdg/PGDG-RPM-GPG-KEY-RHEL \
+        /tmp/pgdg/PGDG-RPM-GPG-KEY-AARCH64-RHEL \
     && rpm --checksig /tmp/pgdg/*.rpm \
     && mkdir -p /runtime \
     && rpm --root /runtime --initdb \
-    && rpm --root /runtime --import /tmp/pgdg/PGDG-RPM-GPG-KEY-RHEL \
+    && rpm --root /runtime --import \
+        /tmp/pgdg/PGDG-RPM-GPG-KEY-RHEL \
+        /tmp/pgdg/PGDG-RPM-GPG-KEY-AARCH64-RHEL \
     && dnf install -y \
         --installroot=/runtime \
         --releasever=9 \
@@ -100,7 +106,7 @@ WORKDIR /var/lib/pgsql
 EXPOSE 5432
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
-  CMD ["/usr/pgsql-18/bin/pg_isready", "--quiet", "--host=/tmp", "--port=5432"]
+  CMD ["/usr/pgsql-18/bin/pg_isready", "--quiet", "--host=127.0.0.1", "--port=5432"]
 
 STOPSIGNAL SIGINT
 

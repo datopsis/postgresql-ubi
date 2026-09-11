@@ -24,5 +24,6 @@ but container releases use the upstream-derived format documented in
   restricted Compose service, and stateful rootless smoke tests.
 - Replaced PGDG repository resolution with checksum-pinned, signature-checked
   PostgreSQL RPM artifacts after native ARM64 exposed invalid signed metadata.
+- Pinned the distinct PGDG ARM64 signing key used by the AArch64 RPM artifacts.
 - Moved the local PostgreSQL socket to the restricted `/tmp` tmpfs so arbitrary
   non-root users behave consistently under Docker and Podman.

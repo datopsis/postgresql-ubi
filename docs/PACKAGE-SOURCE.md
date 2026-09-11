@@ -17,10 +17,11 @@ postgresql18-libs-0:18.6-1PGDG.rhel9.8.x86_64
 postgresql18-server-0:18.6-1PGDG.rhel9.8.x86_64
 ```
 
-The observed PGDG repository key fingerprint was:
+The observed PGDG repository key fingerprints were:
 
 ```text
-D4BF 08AE 67A0 B4C7 A1DB CCD2 40BC A2B4 08B4 0D20
+x86_64: D4BF 08AE 67A0 B4C7 A1DB CCD2 40BC A2B4 08B4 0D20
+aarch64: B031 F89F C983 E982 6290 6B6E 177B 343B B973 8825
 ```
 
 These are observed development inputs, not a permanent lock or release claim.
@@ -29,8 +30,9 @@ and ARM64 plus an external artifact lock and network-disabled assembly.
 
 The development build downloads the three architecture-specific PostgreSQL RPMs
 directly from the PGDG 18 directory. Each URL and SHA-256 digest is explicit in
-the Containerfile. The PGDG signing key is also checksum-pinned, its fingerprint
-is documented above, and every RPM signature is checked before installation.
+the Containerfile. The architecture-specific PGDG signing keys are also
+checksum-pinned, their fingerprints are documented above, and every RPM
+signature is checked before installation.
 This avoids mutable PGDG repository metadata influencing the package selection;
 DNF resolves only the remaining dependencies from the UBI repositories.
 
