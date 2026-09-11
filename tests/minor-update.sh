@@ -44,7 +44,7 @@ wait_ready() {
     for _ in {1..120}; do
         if test "$("${runtime}" exec --env "PGPASSWORD=${password}" "${name}" \
             psql -qAt --host=127.0.0.1 --username=postgres --dbname=postgres \
-            --command='SHOW server_version;' 2>/dev/null || true)" = "${version}"; then
+            --command='SHOW server_version_num;' 2>/dev/null || true)" = "${version}"; then
             return
         fi
         sleep 1
@@ -64,7 +64,7 @@ test "$("${runtime}" image inspect --format '{{.Architecture}}' "${previous_imag
     --mount "type=volume,src=${backup_volume},dst=/backup" \
     --env "POSTGRES_PASSWORD=${password}" \
     "${previous_image}" >/dev/null
-wait_ready "${old_container}" 18.4
+wait_ready "${old_container}" 180004
 test "$("${runtime}" exec "${old_container}" id -u)" = 999
 # PGDATA expands inside the compatibility-fixture container.
 # shellcheck disable=SC2016
@@ -104,7 +104,7 @@ fixture_digest=$("${runtime}" exec "${old_container}" psql -qAt --host=/var/run/
     --cap-drop ALL \
     --security-opt no-new-privileges:true \
     "${image}" >/dev/null
-wait_ready "${new_container}" 18.6
+wait_ready "${new_container}" 180006
 test "$("${runtime}" exec "${new_container}" psql -qAt --host=/tmp --username=postgres \
     --command='SELECT count(*) FROM update_fixture;')" = 1000
 test "$("${runtime}" exec "${new_container}" psql -qAt --host=/tmp --username=postgres \
