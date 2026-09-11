@@ -30,12 +30,16 @@ runtime_base=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["
 test "$("${runtime}" image inspect --format '{{.Architecture}}' localhost/postgresql-ubi-builder:locked)" = "${architecture}"
 test "$("${runtime}" image inspect --format '{{.Architecture}}' localhost/postgresql-ubi-runtime:locked)" = "${architecture}"
 
+build_command=("${runtime}" build)
 if test "${runtime}" = docker; then
     pull_flag=false
+    if test -n "${BUILD_METADATA_FILE:-}"; then
+        build_command=(docker buildx build --load --provenance=mode=max --metadata-file "${BUILD_METADATA_FILE}")
+    fi
 else
     pull_flag=never
 fi
-"${runtime}" build --file Containerfile --tag "${image}" --network=none \
+"${build_command[@]}" --file Containerfile --tag "${image}" --network=none \
     --pull="${pull_flag}" --no-cache \
     --build-arg UBI_MINIMAL_IMAGE=localhost/postgresql-ubi-builder:locked \
     --build-arg UBI_MICRO_IMAGE=localhost/postgresql-ubi-runtime:locked \

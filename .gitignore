@@ -2,6 +2,7 @@
 *.sarif
 *.spdx.json
 *.sbom.json
+provenance-*.json
 cosign.bundle
 
 # Local tooling

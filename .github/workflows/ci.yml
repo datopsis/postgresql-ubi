@@ -98,6 +98,7 @@ jobs:
     env:
       TEST_IMAGE: localhost/postgresql-ubi9:test-${{ matrix.architecture }}
       SBOM_FILE: postgresql-ubi9-${{ matrix.architecture }}.spdx.json
+      PROVENANCE_FILE: provenance-${{ matrix.architecture }}.json
       GRYPE_SARIF: grype-${{ matrix.architecture }}.sarif
       GRYPE_ALL: grype-all-${{ matrix.architecture }}.json
     steps:
@@ -106,6 +107,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
       - name: Confirm native runner architecture
         env:
           EXPECTED_MACHINE: ${{ matrix.machine }}
@@ -113,6 +117,8 @@ jobs:
 
       - name: Acquire, verify, and build from the locked bundle
         env:
+          BUILD_METADATA_FILE: ${{ env.PROVENANCE_FILE }}
+          BUILDX_METADATA_PROVENANCE: max
           CONTAINER_RUNTIME: docker
           IMAGE: ${{ env.TEST_IMAGE }}
         run: bash scripts/build-offline.sh
@@ -121,6 +127,11 @@ jobs:
         run: |
           if docker history --no-trunc --format '{{.CreatedBy}}' "${TEST_IMAGE}" | grep -E 'https?://|RPM-GPG-KEY|/tmp/artifacts'; then
             echo 'forbidden acquisition material found in final image history' >&2
+            exit 1
+          fi
+          test -s "${PROVENANCE_FILE}"
+          if grep -E 'download[.]postgresql[.]org|dnf-srpms[.]postgresql[.]org|cdn-ubi[.]redhat[.]com|security[.]access[.]redhat[.]com|RPM-GPG-KEY|[.]artifact-bundle|/tmp/artifacts' "${PROVENANCE_FILE}"; then
+            echo 'forbidden acquisition material found in build provenance' >&2
             exit 1
           fi
           docker run --rm --user 0 --entrypoint /bin/sh "${TEST_IMAGE}" -ec '
@@ -207,6 +218,7 @@ jobs:
           name: image-security-${{ github.sha }}-${{ matrix.architecture }}
           path: |
             ${{ env.SBOM_FILE }}
+            ${{ env.PROVENANCE_FILE }}
             ${{ env.GRYPE_SARIF }}
             ${{ env.GRYPE_ALL }}
           if-no-files-found: warn
