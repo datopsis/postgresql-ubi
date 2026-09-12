@@ -257,7 +257,7 @@ jobs:
       arm64_digest: ${{ steps.push.outputs.arm64_digest }}
     steps:
       - name: Download exact native OCI candidates
-        uses: actions/download-artifact@608db3e4b26c69590a326f08f5a1c4b9b4d36179 # v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: release-image-${{ github.sha }}-*
           path: candidates
@@ -420,7 +420,7 @@ jobs:
       packages: write
     steps:
       - name: Download complete evidence
-        uses: actions/download-artifact@608db3e4b26c69590a326f08f5a1c4b9b4d36179 # v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: release-evidence-${{ github.sha }}-*
           path: evidence
@@ -504,7 +504,7 @@ jobs:
       contents: write
     steps:
       - name: Download release signatures
-        uses: actions/download-artifact@608db3e4b26c69590a326f08f5a1c4b9b4d36179 # v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release-signatures-${{ github.sha }}
           path: release-assets
