@@ -1,0 +1,119 @@
+name: SCAP discovery
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "41 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scap-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  image-filesystem:
+    name: image filesystem (${{ matrix.architecture }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: amd64
+            runner: ubuntu-24.04
+            machine: x86_64
+          - architecture: arm64
+            runner: ubuntu-24.04-arm
+            machine: aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      TEST_IMAGE: localhost/postgresql-ubi9:scap-${{ matrix.architecture }}
+      SCAP_ARCHIVE: scap-security-guide-0.1.81.zip
+      SCAP_ARCHIVE_SHA256: 865e28b793e1e65f7f0102434bc7d962324a4b9324591e60742f1e9ce375172c
+      OPENSCAP_VERSION: 1.3.9+dfsg-1.1ubuntu2
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Confirm native runner architecture
+        env:
+          EXPECTED_MACHINE: ${{ matrix.machine }}
+        run: test "$(uname -m)" = "${EXPECTED_MACHINE}"
+
+      - name: Install pinned OpenSCAP utilities
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            "openscap-scanner=${OPENSCAP_VERSION}" \
+            "openscap-utils=${OPENSCAP_VERSION}" \
+            "python3-openscap=${OPENSCAP_VERSION}"
+          oscap --version | grep -F 'OpenSCAP command line tool (oscap) 1.3.9'
+          command -v oscap-chroot
+
+      - name: Acquire pinned ComplianceAsCode content
+        run: |
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --output "${SCAP_ARCHIVE}" \
+            "https://github.com/ComplianceAsCode/content/releases/download/v0.1.81/${SCAP_ARCHIVE}"
+          echo "${SCAP_ARCHIVE_SHA256}  ${SCAP_ARCHIVE}" | sha256sum --check --strict
+          mkdir scap-content
+          unzip -j "${SCAP_ARCHIVE}" '*ssg-rhel9-ds.xml' -d scap-content
+          test -s scap-content/ssg-rhel9-ds.xml
+
+      - name: Acquire and build the locked image
+        env:
+          BUILD_METADATA_FILE: provenance-${{ matrix.architecture }}.json
+          BUILDX_METADATA_PROVENANCE: min
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.TEST_IMAGE }}
+        run: bash scripts/build-offline.sh
+
+      - name: Export a never-executed root filesystem
+        run: |
+          container_id="$(docker create --entrypoint /bin/true "${TEST_IMAGE}")"
+          test "$(docker inspect --format '{{.State.Status}}' "${container_id}")" = created
+          docker export --output image-rootfs.tar "${container_id}"
+          docker rm "${container_id}"
+          mkdir image-rootfs
+          sudo tar --numeric-owner --same-owner -xf image-rootfs.tar -C image-rootfs
+          test "$(sudo stat -c '%u:%g' image-rootfs/usr/pgsql-18)" = '0:0'
+
+      - name: Run report-only image-owned discovery
+        run: |
+          set +e
+          sudo oscap-chroot "${PWD}/image-rootfs" xccdf eval \
+            --profile xccdf_datopsis_postgresql_ubi_profile_image_filesystem_discovery \
+            --tailoring-file "${PWD}/compliance/scap/postgresql-ubi-rhel9-tailoring.xml" \
+            --results-arf "${PWD}/scap-results-${{ matrix.architecture }}.xml" \
+            --report "${PWD}/scap-report-${{ matrix.architecture }}.html" \
+            "${PWD}/scap-content/ssg-rhel9-ds.xml"
+          scan_status=$?
+          set -e
+          if test "${scan_status}" -ne 0 && test "${scan_status}" -ne 2; then
+            echo "OpenSCAP execution failed with status ${scan_status}" >&2
+            exit "${scan_status}"
+          fi
+          test -s "scap-results-${{ matrix.architecture }}.xml"
+          test -s "scap-report-${{ matrix.architecture }}.html"
+          printf 'OpenSCAP finding status: %s (report-only; 2 means at least one rule failed)\n' "${scan_status}" \
+            > "scap-status-${{ matrix.architecture }}.txt"
+
+      - name: Retain SCAP discovery evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: scap-discovery-${{ github.sha }}-${{ matrix.architecture }}
+          path: |
+            scap-results-${{ matrix.architecture }}.xml
+            scap-report-${{ matrix.architecture }}.html
+            scap-status-${{ matrix.architecture }}.txt
+            provenance-${{ matrix.architecture }}.json
+          if-no-files-found: error
+          retention-days: 14

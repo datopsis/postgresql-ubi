@@ -38,7 +38,7 @@ not a supported release.
 | Replication, pooling, and high availability | Unsupported for v1 | These require separate topology, availability, and recovery qualification. |
 | Additional extensions | Unsupported for v1 | Only the selected PGDG server/client package closure is in scope. |
 | FIPS validation or approved mode | Unsupported | No PostgreSQL image cryptographic module or operational boundary has been validated. |
-| STIG certification or system compliance | Unsupported | Planned SCAP evidence is limited to explicitly selected image-filesystem checks. |
+| STIG certification or system compliance | Unsupported | Report-only SCAP evidence is limited to explicitly selected image-filesystem checks. |
 
 ## Approved first-release boundary
 

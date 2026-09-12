@@ -343,33 +343,33 @@ documented least privileges.
 
 ### Authoritative requirements and control ownership
 
-- [ ] Create an authoritative source register recording publisher, title,
+- [x] Create an authoritative source register recording publisher, title,
   release, date, retrieval date, URL, SHA-256, current/superseded status, and
   license or redistribution handling.
-- [ ] Analyze applicable NIST SP 800-53 Rev. 5 and SP 800-53A Rev. 5, the DISA
+- [x] Analyze applicable NIST SP 800-53 Rev. 5 and SP 800-53A Rev. 5, the DISA
   Database SRG and Container Platform SRG, current RHEL 9 STIG content, and
   active PostgreSQL-distribution STIGs. Product-specific STIG commands and
   assumptions are references only until proven applicable to PGDG PostgreSQL.
-- [ ] Classify every analyzed requirement exactly once as image-owned,
+- [x] Classify every analyzed requirement exactly once as image-owned,
   deployment-supported, inherited, not applicable, unsupported, or research
   required, with rationale, residual risk, evidence, owner, and review status.
   Require independent review of adopted, excluded, unsupported, and
   not-applicable decisions.
-- [ ] Publish a schema-valid NIST OSCAL Component Definition as the canonical
+- [x] Publish a schema-valid NIST OSCAL Component Definition as the canonical
   component artifact and deterministically generate an SCTM-importable CSV and
   human-readable control implementation view from it. Do not represent these as
   a completed system SCTM, SSP, authorization, or assessor decision.
-- [ ] Give each supported control an examine/test/interview assessment method,
+- [x] Give each supported control an examine/test/interview assessment method,
   default and configurable state, prerequisites, restart behavior, operational
   impact, loss-of-protection statement, limitations, residual risk, evidence
   pointer, and image/deployment/host/organization owner.
 
 ### Threats, hardening, and compliance evidence
 
-- [ ] Publish architecture, build/assurance pipeline, runtime data-flow,
+- [x] Publish architecture, build/assurance pipeline, runtime data-flow,
   credential and TLS trust, storage/backup, controlled-network, and
   control-ownership diagrams.
-- [ ] Publish a threat model covering artifact and key substitution, CI/cache
+- [x] Publish a threat model covering artifact and key substitution, CI/cache
   and runner compromise, malicious pull requests, tag/registry replacement,
   evidence tampering, runtime identity, arbitrary UID, secret disclosure,
   authentication downgrade, configuration injection, exposed listeners,
@@ -377,18 +377,18 @@ documented least privileges.
   exhaustion, storage tampering/corruption, backup theft or failed restoration,
   TLS key/trust compromise, sensitive logs, vulnerable dependencies, update
   failure, rollback, and decommissioning.
-- [ ] Map every threat to mitigations, validation, owner, limitations, and open
+- [x] Map every threat to mitigations, validation, owner, limitations, and open
   risk. A clean vulnerability scan does not close design or abuse-case threats.
-- [ ] Run pinned OpenSCAP and ComplianceAsCode discovery against a
+- [x] Run pinned OpenSCAP and ComplianceAsCode discovery against a
   root-owner-preserving, never-executed export of each architecture image.
   Select only image-owned rules, document every inclusion/exclusion and rule
   rationale, publish tailoring, distinguish failures from not-applicable and
   deployment-owned controls, and make scanner execution errors blocking.
-- [ ] Keep SCAP findings report-only until the profile and false-positive
+- [x] Keep SCAP findings report-only until the profile and false-positive
   process receive security review and an explicit blocking policy is approved.
   State the exact filesystem evidence boundary and make no host, deployment,
   STIG-certification, or compliance claim.
-- [ ] Define the cryptographic boundary for PostgreSQL password hashing, TLS,
+- [x] Define the cryptographic boundary for PostgreSQL password hashing, TLS,
   checksums, signing, and the host/runtime. Identify actual linked libraries,
   module versions, provider/mode behavior, architectures, and any applicable
   CMVP certificate before making a claim. UBI, RHEL FIPS mode, TLS 1.2/1.3, or
@@ -396,20 +396,20 @@ documented least privileges.
 
 ### Vulnerability, incident, and exception management
 
-- [ ] Publish a vulnerability process covering PostgreSQL/PGDG and Red Hat
+- [x] Publish a vulnerability process covering PostgreSQL/PGDG and Red Hat
   advisory precedence, scanner disagreement, package/source-package grouping,
   reachability and exposure, fixed versus unfixed findings, patch SLAs,
   disclosure coordination, emergency rebuilds, and periodic reassessment.
-- [ ] Require every suppression or accepted finding to name the exact digest
+- [x] Require every suppression or accepted finding to name the exact digest
   and architecture, advisory, affected component, vendor status, rationale,
   compensating control, owner, approval, expiry, and rescan trigger. Never use a
   blanket or permanent ignore merely to make a release pass.
-- [ ] Confirm the private vulnerability route is monitored and rehearse the
+- [x] Confirm the private vulnerability route is monitored and rehearse the
   response path without filing a real report or exposing sensitive details.
-- [ ] Publish incident, containment, credential/certificate rotation, forensic
+- [x] Publish incident, containment, credential/certificate rotation, forensic
   evidence, backup recovery, customer notification, release withdrawal,
   registry quarantine, and lessons-learned responsibilities.
-- [ ] Document network policy, firewall/ingress, DNS, secret service, SELinux,
+- [x] Document network policy, firewall/ingress, DNS, secret service, SELinux,
   seccomp, monitoring/SIEM, log retention and disposal, backup encryption and
   access, resource limits, time synchronization, controlled transfer, and
   decommissioning responsibilities that remain outside the image.
@@ -417,6 +417,11 @@ documented least privileges.
 **Exit evidence:** a security reviewer can trace every claimed component
 control from an authoritative source through ownership, implementation,
 assessment method, evidence, limitation, and residual risk.
+
+Implemented by the Package 5 security engineering artifacts. All initial
+classification decisions remain explicitly pending independent review, SCAP is
+report-only, and no FIPS, STIG-certification, system authorization, or
+deployment-compliance claim is made.
 
 ## Package 6: deployment and platform qualification
 

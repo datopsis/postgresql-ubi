@@ -134,6 +134,16 @@ No supported image has been released. The current implementation is for
 development and evaluation; consult the [support matrix](docs/SUPPORT.md)
 before relying on any platform or operational claim.
 
+## Cybersecurity engineering
+
+The [security engineering record](docs/SECURITY-ENGINEERING.md) links the
+authoritative source register, schema-validated OSCAL component definition,
+generated control view, architecture, threat model, SCAP evidence boundary,
+cryptographic claim gate, vulnerability/exception process, incident response,
+and deployment responsibility matrix. These are component support artifacts,
+not a system authorization, STIG certification, FIPS validation, or compliance
+determination.
+
 ## References
 
 - [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/)
