@@ -20,6 +20,14 @@ test ! -e "${bundle}"
 python3 scripts/artifacts.py acquire --lock "${lock}" --output "${bundle}"
 bash scripts/verify-key-fingerprints.sh "${bundle}"
 lock_sha=$(sha256sum "${lock}" | cut -d' ' -f1)
+postgresql_signer=$(python3 -c '
+import json, sys
+lock = json.load(open(sys.argv[1]))
+values = {item["signing_key_fingerprint"] for item in lock["packages"]
+          if item["name"].startswith("postgresql")}
+assert len(values) == 1
+print(values.pop())
+' "${lock}")
 builder=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["base_images"]["builder"]["reference"])' "${lock}")
 runtime_base=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["base_images"]["runtime"]["reference"])' "${lock}")
 
@@ -39,7 +47,13 @@ build_arguments=(--file Containerfile --tag "${image}" --network=none \
     --pull="${pull_flag}" --no-cache \
     --build-arg UBI_MINIMAL_IMAGE=localhost/postgresql-ubi-builder:locked \
     --build-arg UBI_MICRO_IMAGE=localhost/postgresql-ubi-runtime:locked \
+    --build-arg POSTGRESQL_SIGNING_KEY_FINGERPRINT="${postgresql_signer}" \
     --build-arg ARTIFACT_LOCK_SHA256="${lock_sha}" .)
+for release_argument in RELEASE_VERSION RELEASE_REVISION RELEASE_CREATED RELEASE_SOURCE; do
+    if test -n "${!release_argument:-}"; then
+        build_arguments=(--build-arg "${release_argument}=${!release_argument}" "${build_arguments[@]}")
+    fi
+done
 if test "${runtime}" = docker && test -n "${BUILD_METADATA_FILE:-}"; then
     build_arguments=(--metadata-file "${BUILD_METADATA_FILE}" "${build_arguments[@]}")
 fi

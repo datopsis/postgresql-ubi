@@ -81,7 +81,7 @@ Work proceeds in this dependency order:
    and network-disabled assembly.
 3. **Complete:** close the database security, storage, lifecycle, TLS, logging, backup,
    restore, and upgrade test matrix.
-4. Add the release pipeline and remaining supply-chain controls.
+4. **Complete:** add the release pipeline and remaining supply-chain controls.
 5. Complete the cybersecurity requirement analysis, threat model, control
    artifacts, tailored SCAP evidence, and vulnerability policy.
 6. Qualify rootless Podman and the selected operational profile on an exact
@@ -300,39 +300,39 @@ resource exhaustion/recovery, PostgreSQL 18.4-to-18.6 preserved-data update,
 TLS rotation/negative, vulnerability, SBOM, and repository gates at revision
 `9827bd94ce41c35796b7fa56bd2cae35b7347aa3`.
 
-## Package 4: CI, updates, and release supply chain
+## Package 4: CI, updates, and release supply chain (complete)
 
-- [ ] Add tests for release-tag syntax, real UTC dates and sequences,
+- [x] Add tests for release-tag syntax, real UTC dates and sequences,
   PostgreSQL/UBI/lock matching, annotated tags, protected-`main` ancestry,
   changelog state, and rejection of mutable, malformed, reused, moved, or
   mismatched tags.
-- [ ] Add a least-privilege, non-cancelling release workflow that publishes only
+- [x] Add a least-privilege, non-cancelling release workflow that publishes only
   the immutable release and commit tags, produces the native AMD64/ARM64
   manifest, records complete OCI metadata, and separates build, scan, approval,
   signing, and release permissions.
-- [ ] Generate architecture-specific and manifest-level SBOM/provenance
+- [x] Generate architecture-specific and manifest-level SBOM/provenance
   attestations, a downloadable complete SPDX SBOM, scan results, lock and source
   provenance, image configuration, and verification instructions bound to the
   published digest.
-- [ ] Sign the image digest and complete SPDX attestation keylessly with GitHub
+- [x] Sign the image digest and complete SPDX attestation keylessly with GitHub
   OIDC/Cosign, retain verification bundles, and test issuer, identity, digest,
   and attestation-policy verification without relying on a mutable tag.
-- [ ] Retain full Trivy and Grype findings, including unfixed and lower-severity
+- [x] Retain full Trivy and Grype findings, including unfixed and lower-severity
   inventory for human triage. Scanner operational errors, missing inventories,
   architecture mismatches, or absent evidence always block.
-- [ ] Add monitored update proposals for PostgreSQL releases, PGDG RPMs and
+- [x] Add monitored update proposals for PostgreSQL releases, PGDG RPMs and
   signing keys, UBI manifests and dependency locks, GitHub Actions, scanner
   engines/databases, Cosign, ComplianceAsCode, and other assurance tooling.
-- [ ] Define the UBI-only emergency rebuild path and response target so a base
+- [x] Define the UBI-only emergency rebuild path and response target so a base
   security update does not wait for a PostgreSQL release.
-- [ ] Audit workflow permissions, immutable action references, artifact
+- [x] Audit workflow permissions, immutable action references, artifact
   attestations, cache trust, fork behavior, expression injection, artifact
   overwrite/extraction risks, OIDC scope, token persistence, and environment
   protections.
-- [ ] Define release-evidence retention and backup. Release evidence must outlive
+- [x] Define release-evidence retention and backup. Release evidence must outlive
   workflow artifact expiry and remain available for incident response and
   verification throughout the support and supersession period.
-- [ ] Define failed-candidate handling: no failed digest is signed or announced;
+- [x] Define failed-candidate handling: no failed digest is signed or announced;
   a partially published tag/digest is quarantined or removed and never reused.
 
 **Exit evidence:** a rehearsal proves the exact reviewed candidate can be

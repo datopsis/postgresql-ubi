@@ -52,16 +52,34 @@ RUN test -n "${ARTIFACT_LOCK_SHA256}" \
 
 FROM scratch
 
+ARG UBI_MINIMAL_IMAGE
+ARG UBI_MICRO_IMAGE
 ARG POSTGRESQL_VERSION="18.6"
 ARG POSTGRESQL_RPM_VERSION="18.6-1PGDG.rhel9.8"
+ARG POSTGRESQL_PUBLISHER="PostgreSQL Global Development Group (PGDG)"
+ARG POSTGRESQL_SIGNING_KEY_FINGERPRINT="unknown"
 ARG ARTIFACT_LOCK_SHA256
+ARG RELEASE_VERSION="development"
+ARG RELEASE_REVISION="unknown"
+ARG RELEASE_CREATED="1970-01-01T00:00:00Z"
+ARG RELEASE_SOURCE="https://github.com/datopsis/postgresql-ubi"
 
 LABEL org.opencontainers.image.title="PostgreSQL on Red Hat UBI 9" \
       org.opencontainers.image.description="A security-oriented, rootless PostgreSQL image built on Red Hat UBI 9 Micro" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.vendor="Datopsis" \
-      org.opencontainers.image.version="${POSTGRESQL_VERSION}" \
+      org.opencontainers.image.version="${RELEASE_VERSION}" \
+      org.opencontainers.image.revision="${RELEASE_REVISION}" \
+      org.opencontainers.image.created="${RELEASE_CREATED}" \
+      org.opencontainers.image.source="${RELEASE_SOURCE}" \
+      org.opencontainers.image.url="${RELEASE_SOURCE}" \
+      org.opencontainers.image.documentation="${RELEASE_SOURCE}/blob/${RELEASE_REVISION}/README.md" \
       io.datopsis.postgresql.rpm-version="${POSTGRESQL_RPM_VERSION}" \
+      io.datopsis.postgresql.version="${POSTGRESQL_VERSION}" \
+      io.datopsis.postgresql.publisher="${POSTGRESQL_PUBLISHER}" \
+      io.datopsis.postgresql.signing-key-fingerprint="${POSTGRESQL_SIGNING_KEY_FINGERPRINT}" \
+      io.datopsis.ubi.builder="${UBI_MINIMAL_IMAGE}" \
+      io.datopsis.ubi.runtime="${UBI_MICRO_IMAGE}" \
       io.datopsis.artifact-lock.sha256="${ARTIFACT_LOCK_SHA256}"
 
 COPY --from=builder /final/ /

@@ -1,0 +1,54 @@
+name: Monitor upstream updates
+
+on:
+  schedule:
+    - cron: "41 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-monitor
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: update review dashboard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the maintained upstream PostgreSQL line
+        id: postgresql
+        run: >-
+          python3 scripts/check-postgresql-update.py
+          --report update-report.md --github-output "${GITHUB_OUTPUT}"
+
+      - name: Create or refresh the update-review issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_TITLE: Supply-chain update review dashboard
+        run: |
+          issue="$(gh issue list --state open --search "${ISSUE_TITLE} in:title" \
+            --json number,title --jq '.[] | select(.title == env.ISSUE_TITLE) | .number' | head -n1)"
+          if test -n "${issue}"; then
+            gh issue edit "${issue}" --body-file update-report.md
+          else
+            gh issue create --title "${ISSUE_TITLE}" --body-file update-report.md
+          fi
+
+      - name: Retain the monitored result
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: upstream-update-report-${{ github.run_id }}
+          path: update-report.md
+          if-no-files-found: error
+          retention-days: 30

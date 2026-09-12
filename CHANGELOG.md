@@ -43,3 +43,7 @@ but container releases use the upstream-derived format documented in
 - Added executable deployment guidance for fixed and arbitrary identities,
   Podman, Docker and Compose, named and bind-mounted storage, TLS and isolated
   non-TLS networks, controlled transfer, operations, recovery, and teardown.
+- Added the immutable, least-privilege native release pipeline; fail-closed tag
+  policy; digest-bound SBOM, provenance, scanning, signing, verification, and
+  evidence controls; upstream monitoring; emergency rebuild; and quarantine
+  procedures.

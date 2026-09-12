@@ -49,6 +49,15 @@ inputs to review, not a substitute for advisory analysis.
 | CI Actions, scanners, vulnerability databases, and assurance tools | Review alerts continuously and perform a pinned-version review at least monthly. |
 | Support and security policy | Review at every release and at least quarterly. |
 
+The weekly update dashboard compares the maintained PostgreSQL line with the
+authoritative upstream versions feed. The scheduled lock resolver exercises
+both architectures against current PGDG/UBI metadata and signing material;
+Dependabot and Renovate propose pinned Actions, Python tools, UBI images,
+scanners, Cosign, and assurance-tool changes. A bot proposal or green scheduled
+run is only an alert: signing-key changes require fingerprint review, lock
+changes require source/binary review, and scanner database changes invalidate
+the affected evidence. See [the release supply chain](RELEASE.md).
+
 Targets start when the project receives a credible report or an authoritative
 notice is public, whichever occurs first. Severity is not accepted from a
 scanner string alone: assessment includes vendor status, affected source and
@@ -114,6 +123,11 @@ events permit. An urgent security or legal withdrawal can be immediate.
 - Release-candidate and published-release evidence is retained for the full
   support period plus one year, with release-critical evidence copied out of
   short-lived workflow artifacts.
+- Within 24 hours of publication, copy release assets, raw manifest, Sigstore
+  bundles, checksums, release metadata, and the qualification ledger to the
+  access-controlled immutable backup named in the qualification record. Test
+  retrieval annually and before a provider change; an untested backup is not
+  release evidence.
 - Security advisory and incident evidence follows the deployment
   organization's legal, privacy, and records policy and must not be placed in a
   public repository merely to satisfy this project policy.
