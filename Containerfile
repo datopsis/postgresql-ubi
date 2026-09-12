@@ -57,7 +57,7 @@ ARG UBI_MICRO_IMAGE
 ARG POSTGRESQL_VERSION="18.6"
 ARG POSTGRESQL_RPM_VERSION="18.6-1PGDG.rhel9.8"
 ARG POSTGRESQL_PUBLISHER="PostgreSQL Global Development Group (PGDG)"
-ARG POSTGRESQL_SIGNING_KEY_FINGERPRINT="unknown"
+ARG POSTGRESQL_SIGNER_FINGERPRINT="unknown"
 ARG ARTIFACT_LOCK_SHA256
 ARG RELEASE_VERSION="development"
 ARG RELEASE_REVISION="unknown"
@@ -77,7 +77,7 @@ LABEL org.opencontainers.image.title="PostgreSQL on Red Hat UBI 9" \
       io.datopsis.postgresql.rpm-version="${POSTGRESQL_RPM_VERSION}" \
       io.datopsis.postgresql.version="${POSTGRESQL_VERSION}" \
       io.datopsis.postgresql.publisher="${POSTGRESQL_PUBLISHER}" \
-      io.datopsis.postgresql.signing-key-fingerprint="${POSTGRESQL_SIGNING_KEY_FINGERPRINT}" \
+      io.datopsis.postgresql.signing-key-fingerprint="${POSTGRESQL_SIGNER_FINGERPRINT}" \
       io.datopsis.ubi.builder="${UBI_MINIMAL_IMAGE}" \
       io.datopsis.ubi.runtime="${UBI_MICRO_IMAGE}" \
       io.datopsis.artifact-lock.sha256="${ARTIFACT_LOCK_SHA256}"

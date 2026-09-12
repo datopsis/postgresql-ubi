@@ -47,7 +47,7 @@ build_arguments=(--file Containerfile --tag "${image}" --network=none \
     --pull="${pull_flag}" --no-cache \
     --build-arg UBI_MINIMAL_IMAGE=localhost/postgresql-ubi-builder:locked \
     --build-arg UBI_MICRO_IMAGE=localhost/postgresql-ubi-runtime:locked \
-    --build-arg POSTGRESQL_SIGNING_KEY_FINGERPRINT="${postgresql_signer}" \
+    --build-arg POSTGRESQL_SIGNER_FINGERPRINT="${postgresql_signer}" \
     --build-arg ARTIFACT_LOCK_SHA256="${lock_sha}" .)
 for release_argument in RELEASE_VERSION RELEASE_REVISION RELEASE_CREATED RELEASE_SOURCE; do
     if test -n "${!release_argument:-}"; then

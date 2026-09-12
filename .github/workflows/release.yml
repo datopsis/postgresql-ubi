@@ -147,7 +147,7 @@ jobs:
             --build-arg UBI_MINIMAL_IMAGE="${builder}" \
             --build-arg UBI_MICRO_IMAGE="${runtime}" \
             --build-arg ARTIFACT_LOCK_SHA256="${lock_sha}" \
-            --build-arg POSTGRESQL_SIGNING_KEY_FINGERPRINT="${postgresql_signer}" \
+            --build-arg POSTGRESQL_SIGNER_FINGERPRINT="${postgresql_signer}" \
             --build-arg RELEASE_VERSION="${RELEASE_VERSION}" \
             --build-arg RELEASE_REVISION="${RELEASE_REVISION}" \
             --build-arg RELEASE_CREATED="${CREATED}" \
@@ -452,19 +452,19 @@ jobs:
           DIGEST: ${{ needs.publish.outputs.digest }}
         run: |
           cosign attest --yes --type spdxjson \
-            --predicate evidence/release-evidence-${GITHUB_SHA}-amd64/image-amd64.spdx.json \
+            --predicate "evidence/release-evidence-${GITHUB_SHA}-amd64/image-amd64.spdx.json" \
             --bundle amd64-sbom.sigstore.json "${IMAGE}@${AMD64_DIGEST}"
           cosign attest --yes --type spdxjson \
-            --predicate evidence/release-evidence-${GITHUB_SHA}-arm64/image-arm64.spdx.json \
+            --predicate "evidence/release-evidence-${GITHUB_SHA}-arm64/image-arm64.spdx.json" \
             --bundle arm64-sbom.sigstore.json "${IMAGE}@${ARM64_DIGEST}"
           cosign attest --yes --type https://datopsis.dev/attestations/build-provenance/v1 \
-            --predicate evidence/release-evidence-${GITHUB_SHA}-amd64/provenance-amd64.json \
+            --predicate "evidence/release-evidence-${GITHUB_SHA}-amd64/provenance-amd64.json" \
             --bundle amd64-provenance.sigstore.json "${IMAGE}@${AMD64_DIGEST}"
           cosign attest --yes --type https://datopsis.dev/attestations/build-provenance/v1 \
-            --predicate evidence/release-evidence-${GITHUB_SHA}-arm64/provenance-arm64.json \
+            --predicate "evidence/release-evidence-${GITHUB_SHA}-arm64/provenance-arm64.json" \
             --bundle arm64-provenance.sigstore.json "${IMAGE}@${ARM64_DIGEST}"
           cosign attest --yes --type spdxjson \
-            --predicate evidence/release-evidence-${GITHUB_SHA}-manifest/image.spdx.json \
+            --predicate "evidence/release-evidence-${GITHUB_SHA}-manifest/image.spdx.json" \
             --bundle manifest-sbom.sigstore.json "${IMAGE}@${DIGEST}"
           cosign attest --yes --type https://datopsis.dev/attestations/release-evidence/v1 \
             --predicate release-evidence.json --bundle release-evidence.sigstore.json \

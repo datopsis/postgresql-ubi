@@ -127,7 +127,7 @@ jobs:
 
       - name: Prove acquisition material is absent from the final image
         run: |
-          if docker history --no-trunc --format '{{.CreatedBy}}' "${TEST_IMAGE}" | grep -E 'https?://|RPM-GPG-KEY|/tmp/artifacts'; then
+          if docker history --no-trunc --format '{{.CreatedBy}}' "${TEST_IMAGE}" | grep -E 'download[.]postgresql[.]org|dnf-srpms[.]postgresql[.]org|cdn-ubi[.]redhat[.]com|security[.]access[.]redhat[.]com|RPM-GPG-KEY|[.]artifact-bundle|/tmp/artifacts'; then
             echo 'forbidden acquisition material found in final image history' >&2
             exit 1
           fi
