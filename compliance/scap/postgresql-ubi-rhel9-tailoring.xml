@@ -7,7 +7,6 @@
     <xccdf:title>postgresql-ubi image filesystem discovery</xccdf:title>
     <xccdf:description>Report-only discovery limited to file ownership and privilege bits in the exported image root filesystem. This is not a RHEL 9 STIG profile.</xccdf:description>
     <xccdf:select idref="xccdf_org.ssgproject.content_rule_no_files_unowned_by_user" selected="true"/>
-    <xccdf:select idref="xccdf_org.ssgproject.content_rule_no_files_unowned_by_group" selected="true"/>
     <xccdf:select idref="xccdf_org.ssgproject.content_rule_file_permissions_unauthorized_world_writable" selected="true"/>
     <xccdf:select idref="xccdf_org.ssgproject.content_rule_file_permissions_unauthorized_suid" selected="true"/>
     <xccdf:select idref="xccdf_org.ssgproject.content_rule_file_permissions_unauthorized_sgid" selected="true"/>

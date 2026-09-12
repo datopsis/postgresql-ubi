@@ -12,8 +12,10 @@ not start PostgreSQL or execute a binary from the target image.
 ## Evidence boundary and selected rules
 
 The boundary is only files present in the immutable image export: their path,
-numeric user/group, and permission bits. The tailoring selects five rules for
-unowned users/groups, world-writable files, setuid, and setgid. The exact
+numeric user/group, and permission bits. The tailoring selects four rules for
+unowned users, world-writable files, setuid, and setgid. The proposed
+`no_files_unowned_by_group` identifier is not present in the pinned RHEL 9
+content and is explicitly excluded as research-required. The exact
 decisions and grouped exclusions are in `compliance/scap/rule-decisions.csv`.
 The XML profile intentionally does not extend the RHEL 9 STIG profile.
 
@@ -41,3 +43,13 @@ required.
 The reports are not evidence that a host, runtime, deployment, database, or
 organization satisfies the RHEL 9 STIG or any authorization baseline. The
 project makes no DISA approval, STIG certification, or compliance claim.
+
+## Initial discovery evidence
+
+Pull request 8, workflow run `34694959686`, evaluated commit `e1bd229e` on
+native AMD64 and ARM64. Both architectures returned scanner exit `0`: setuid,
+setgid, and world-writable-file rules passed; the unowned-user rule was
+`notapplicable`; 1,528 other RHEL rules were `notselected`. The result does not
+convert `notapplicable` into pass. Run artifacts retain each ARF, HTML report,
+status, and build provenance for 14 days; release evidence must be copied to
+the durable store defined by the release policy.

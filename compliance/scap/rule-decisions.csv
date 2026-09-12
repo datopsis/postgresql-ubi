@@ -1,6 +1,6 @@
 rule_id,decision,ownership,rationale,result_policy
 no_files_unowned_by_user,include,image-owned,The repository fixes every file and numeric owner in the immutable image filesystem.,report-only
-no_files_unowned_by_group,include,image-owned,The repository fixes every file and numeric group in the immutable image filesystem.,report-only
+no_files_unowned_by_group,exclude,research-required,ComplianceAsCode 0.1.81 RHEL 9 does not contain this proposed rule identifier; image group ownership remains covered by build policy and requires a reviewed SCAP rule before inclusion.,manual-review
 file_permissions_unauthorized_world_writable,include,image-owned,The repository controls mode bits in immutable image layers.,report-only
 file_permissions_unauthorized_suid,include,image-owned,The repository prohibits unexpected setuid files in immutable image layers.,report-only
 file_permissions_unauthorized_sgid,include,image-owned,The repository prohibits unexpected setgid files in immutable image layers.,report-only
