@@ -89,7 +89,7 @@ jobs:
         run: |
           set +e
           sudo oscap-chroot "${PWD}/image-rootfs" xccdf eval \
-            --profile xccdf_datopsis_postgresql_ubi_profile_image_filesystem_discovery \
+            --profile xccdf_datopsis_profile_image_filesystem_discovery \
             --tailoring-file "${PWD}/compliance/scap/postgresql-ubi-rhel9-tailoring.xml" \
             --results-arf "${PWD}/scap-results-${{ matrix.architecture }}.xml" \
             --report "${PWD}/scap-report-${{ matrix.architecture }}.html" \
