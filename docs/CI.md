@@ -36,8 +36,20 @@ release evidence. Review workflow logs, warnings, skipped steps, scanner
 results, and retained artifacts rather than relying only on a green aggregate
 status.
 
+## Release pipeline
+
+The tag-only pipeline validates immutable identity, builds and tests native OCI
+candidates, scans before and after publication, requires `release` environment
+approval, publishes the two-tag AMD64/ARM64 index, attaches keyless Cosign
+evidence, verifies it, and only then creates a GitHub Release. Permissions,
+evidence, failure handling, and consumer commands are in
+[RELEASE.md](RELEASE.md). It cannot publish a supported image until Package 8
+completes the disposable rehearsal, settings audit, frozen qualification, and
+independent approval.
+
 ## Evidence boundary
 
-CI artifacts contain exact-commit SBOM and scan results and currently expire
-after 14 days. Release evidence requirements, retention, signing, provenance,
-and publication remain first-release roadmap work.
+CI artifacts contain exact-commit SBOM and scan results and expire after 14
+days. Release transfer archives expire after 7 days and release workflow
+evidence after 90 days; durable release assets and their required independent
+backup follow [the release policy](RELEASE.md#retention-and-backup).

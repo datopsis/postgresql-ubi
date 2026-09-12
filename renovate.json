@@ -1,0 +1,54 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "dependencyDashboard": true,
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "groupName": "Red Hat UBI 9 base images",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "registry.access.redhat.com/ubi9/ubi-minimal",
+        "registry.access.redhat.com/ubi9/ubi-micro"
+      ]
+    },
+    {
+      "groupName": "container assurance tools",
+      "matchPackageNames": [
+        "anchore/grype",
+        "anchore/syft",
+        "aquasecurity/trivy",
+        "complianceascode/content",
+        "sigstore/cosign"
+      ]
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "datasourceTemplate": "github-releases",
+      "managerFilePatterns": ["/^\\.github/workflows/.*\\.ya?ml$/"],
+      "matchStrings": [
+        "syft-version: v(?<currentValue>[0-9.]+)"
+      ],
+      "packageNameTemplate": "anchore/syft"
+    },
+    {
+      "customType": "regex",
+      "datasourceTemplate": "github-releases",
+      "managerFilePatterns": ["/^\\.github/workflows/.*\\.ya?ml$/"],
+      "matchStrings": [
+        "grype-version: v(?<currentValue>[0-9.]+)"
+      ],
+      "packageNameTemplate": "anchore/grype"
+    },
+    {
+      "customType": "regex",
+      "datasourceTemplate": "github-releases",
+      "managerFilePatterns": ["/^artifacts/assurance-tool-versions\\.json$/"],
+      "matchStrings": [
+        "\"compliance_as_code\": \"(?<currentValue>[0-9.]+)\""
+      ],
+      "packageNameTemplate": "ComplianceAsCode/content"
+    }
+  ]
+}

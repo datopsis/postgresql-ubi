@@ -1,0 +1,518 @@
+name: Release image
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions: read-all
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/datopsis/postgresql-ubi
+
+jobs:
+  validate:
+    name: validate release identity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      release_version: ${{ steps.release.outputs.release_version }}
+      revision: ${{ steps.release.outputs.revision }}
+      commit_tag: ${{ steps.release.outputs.commit_tag }}
+      release_date: ${{ steps.release.outputs.release_date }}
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch protected main without credentials
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Validate tag, locks, changelog, date, sequence, and ancestry
+        id: release
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: >-
+          python3 scripts/release.py "${RELEASE_TAG}"
+          --require-annotated --require-main --require-current-date
+          --require-next-sequence --github-output "${GITHUB_OUTPUT}"
+
+      - name: Fail closed if a GitHub Release exists or cannot be checked
+        env:
+          API_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          status="$(curl --silent --show-error --output release-response.json \
+            --write-out '%{http_code}' \
+            --header 'Accept: application/vnd.github+json' \
+            --header "Authorization: Bearer ${API_TOKEN}" \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}")"
+          case "${status}" in
+            404) ;;
+            200) echo "release tag was already used" >&2; exit 1 ;;
+            *) echo "release reuse check failed with HTTP ${status}" >&2; exit 1 ;;
+          esac
+
+  build:
+    name: build and inspect (${{ matrix.architecture }})
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: amd64
+            runner: ubuntu-24.04
+            platform: linux/amd64
+            machine: x86_64
+          - architecture: arm64
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            machine: aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      ARCHITECTURE: ${{ matrix.architecture }}
+      LOCAL_IMAGE: localhost/postgresql-ubi:release-${{ matrix.architecture }}
+      OCI_ARCHIVE: candidate-${{ matrix.architecture }}.tar
+      SBOM_FILE: image-${{ matrix.architecture }}.spdx.json
+      PROVENANCE_FILE: provenance-${{ matrix.architecture }}.json
+      TRIVY_ALL: trivy-all-${{ matrix.architecture }}.json
+      GRYPE_ALL: grype-all-${{ matrix.architecture }}.json
+    steps:
+      - name: Check out exact tagged commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Confirm native runner architecture
+        env:
+          EXPECTED_MACHINE: ${{ matrix.machine }}
+        run: test "$(uname -m)" = "${EXPECTED_MACHINE}"
+
+      - name: Acquire locked inputs and build the runtime-test image
+        env:
+          BUILD_METADATA_FILE: ${{ env.PROVENANCE_FILE }}
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.LOCAL_IMAGE }}
+          RELEASE_CREATED: ${{ needs.validate.outputs.release_date }}T00:00:00Z
+          RELEASE_REVISION: ${{ needs.validate.outputs.revision }}
+          RELEASE_SOURCE: https://github.com/${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
+        run: bash scripts/build-offline.sh
+
+      - name: Run the complete restricted runtime suite
+        env:
+          CONTAINER_RUNTIME: docker
+          IMAGE: ${{ env.LOCAL_IMAGE }}
+        run: |
+          bash tests/smoke.sh
+          bash tests/runtime-security.sh
+          bash tests/storage-lifecycle.sh
+          bash tests/resource-limits.sh
+          bash tests/minor-update.sh
+          bash tests/tls.sh
+
+      - name: Export the exact native OCI candidate with attestations
+        env:
+          CREATED: ${{ needs.validate.outputs.release_date }}T00:00:00Z
+          RELEASE_REVISION: ${{ needs.validate.outputs.revision }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
+        run: |
+          set -Eeuo pipefail
+          lock="artifacts/locks/${ARCHITECTURE}.json"
+          lock_sha="$(sha256sum "${lock}" | cut -d' ' -f1)"
+          postgresql_signer="$(jq -er '[.packages[] | select(.name | startswith("postgresql")) | .signing_key_fingerprint] | unique | if length == 1 then .[0] else error("ambiguous PostgreSQL signer") end' "${lock}")"
+          builder="$(jq -er '.base_images.builder.reference' "${lock}")"
+          runtime="$(jq -er '.base_images.runtime.reference' "${lock}")"
+          SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)" docker buildx build \
+            --file Containerfile --platform "${{ matrix.platform }}" \
+            --network=none --pull=false --no-cache \
+            --tag "candidate:${RELEASE_TAG}" \
+            --build-arg UBI_MINIMAL_IMAGE="${builder}" \
+            --build-arg UBI_MICRO_IMAGE="${runtime}" \
+            --build-arg ARTIFACT_LOCK_SHA256="${lock_sha}" \
+            --build-arg POSTGRESQL_SIGNER_FINGERPRINT="${postgresql_signer}" \
+            --build-arg RELEASE_VERSION="${RELEASE_VERSION}" \
+            --build-arg RELEASE_REVISION="${RELEASE_REVISION}" \
+            --build-arg RELEASE_CREATED="${CREATED}" \
+            --build-arg RELEASE_SOURCE="https://github.com/${GITHUB_REPOSITORY}" \
+            --provenance=false --sbom=false \
+            --output "type=oci,dest=${OCI_ARCHIVE},name=${RELEASE_TAG},rewrite-timestamp=true" .
+          test -s "${OCI_ARCHIVE}"
+
+      - name: Generate downloadable architecture SPDX SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          image: oci-archive:${{ env.OCI_ARCHIVE }}
+          format: spdx-json
+          output-file: ${{ env.SBOM_FILE }}
+          syft-version: v1.51.1
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Enforce Trivy release gate
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          input: ${{ env.OCI_ARCHIVE }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+      - name: Record every Trivy finding
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          input: ${{ env.OCI_ARCHIVE }}
+          format: json
+          output: ${{ env.TRIVY_ALL }}
+          exit-code: "0"
+          ignore-unfixed: false
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+
+      - name: Enforce Grype release gate
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          sbom: ${{ env.SBOM_FILE }}
+          output-format: sarif
+          output-file: grype-${{ matrix.architecture }}.sarif
+          severity-cutoff: high
+          only-fixed: true
+          fail-build: true
+          cache-db: true
+          grype-version: v0.118.0
+
+      - name: Record every Grype finding
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          sbom: ${{ env.SBOM_FILE }}
+          output-format: json
+          output-file: ${{ env.GRYPE_ALL }}
+          severity-cutoff: negligible
+          only-fixed: false
+          fail-build: false
+          cache-db: true
+          grype-version: v0.118.0
+
+      - name: Record OCI descriptor and image configuration
+        run: |
+          tar -xOf "${OCI_ARCHIVE}" index.json > "manifest-${ARCHITECTURE}.json"
+          docker image inspect "${LOCAL_IMAGE}" > "image-config-${ARCHITECTURE}.json"
+          sha256sum "${OCI_ARCHIVE}" > "archive-${ARCHITECTURE}.sha256"
+          cp "artifacts/locks/${ARCHITECTURE}.json" "artifact-lock-${ARCHITECTURE}.json"
+
+      - name: Retain candidate OCI archive for promotion
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-image-${{ github.sha }}-${{ matrix.architecture }}
+          path: ${{ env.OCI_ARCHIVE }}
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Retain complete architecture evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-evidence-${{ github.sha }}-${{ matrix.architecture }}
+          path: |
+            ${{ env.SBOM_FILE }}
+            ${{ env.PROVENANCE_FILE }}
+            ${{ env.TRIVY_ALL }}
+            ${{ env.GRYPE_ALL }}
+            grype-${{ matrix.architecture }}.sarif
+            manifest-${{ matrix.architecture }}.json
+            image-config-${{ matrix.architecture }}.json
+            archive-${{ matrix.architecture }}.sha256
+            artifact-lock-${{ matrix.architecture }}.json
+          if-no-files-found: error
+          retention-days: 90
+
+  publish:
+    name: approve and publish immutable manifest
+    needs: [validate, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.manifest.outputs.digest }}
+      amd64_digest: ${{ steps.push.outputs.amd64_digest }}
+      arm64_digest: ${{ steps.push.outputs.arm64_digest }}
+    steps:
+      - name: Download exact native OCI candidates
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-image-${{ github.sha }}-*
+          path: candidates
+          merge-multiple: true
+
+      - name: Install ORAS
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          version: 1.3.3
+
+      - name: Authenticate to GHCR
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: echo "${GHCR_TOKEN}" | oras login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+
+      - name: Push architecture manifests by digest without staging tags
+        id: push
+        env:
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+        run: |
+          set -Eeuo pipefail
+          for architecture in amd64 arm64; do
+            archive="candidates/candidate-${architecture}.tar"
+            descriptor="$(oras manifest fetch --descriptor --from-oci-layout "${archive}:${RELEASE_TAG}")"
+            digest="$(jq -er .digest <<<"${descriptor}")"
+            [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+            oras cp --recursive --from-oci-layout \
+              "${archive}:${RELEASE_TAG}" "${IMAGE}@${digest}"
+            echo "${architecture}_digest=${digest}" >> "${GITHUB_OUTPUT}"
+          done
+
+      - name: Create only the immutable release and commit tags
+        id: manifest
+        env:
+          AMD64_DIGEST: ${{ steps.push.outputs.amd64_digest }}
+          ARM64_DIGEST: ${{ steps.push.outputs.arm64_digest }}
+          COMMIT_TAG: ${{ needs.validate.outputs.commit_tag }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+        run: |
+          docker buildx imagetools create \
+            --tag "${IMAGE}:${RELEASE_TAG}" --tag "${IMAGE}:${COMMIT_TAG}" \
+            --metadata-file manifest-metadata.json \
+            "${IMAGE}@${AMD64_DIGEST}" "${IMAGE}@${ARM64_DIGEST}"
+          digest="$(jq -er '."containerimage.digest"' manifest-metadata.json)"
+          [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+
+  scan:
+    name: scan published digest
+    needs: [validate, publish]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Authenticate to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Verify exactly one AMD64 and one ARM64 manifest
+        env:
+          DIGEST: ${{ needs.publish.outputs.digest }}
+        run: |
+          docker buildx imagetools inspect --raw "${IMAGE}@${DIGEST}" > manifest.json
+          jq -e '
+            [.manifests[] | select(.platform.os == "linux") | .platform.architecture]
+            | sort == ["amd64", "arm64"]
+          ' manifest.json
+
+      - name: Enforce published-digest Trivy gate
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}@${{ needs.publish.outputs.digest }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+      - name: Record every published-digest Trivy finding
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}@${{ needs.publish.outputs.digest }}
+          format: json
+          output: trivy-index-all.json
+          exit-code: "0"
+          ignore-unfixed: false
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+
+      - name: Generate manifest SPDX SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          image: ${{ env.IMAGE }}@${{ needs.publish.outputs.digest }}
+          format: spdx-json
+          output-file: image.spdx.json
+          syft-version: v1.51.1
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Enforce published-digest Grype gate
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          sbom: image.spdx.json
+          output-format: sarif
+          output-file: grype-index.sarif
+          severity-cutoff: high
+          only-fixed: true
+          fail-build: true
+          cache-db: true
+          grype-version: v0.118.0
+
+      - name: Record all published-digest Grype findings
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          sbom: image.spdx.json
+          output-format: json
+          output-file: grype-index-all.json
+          severity-cutoff: negligible
+          only-fixed: false
+          fail-build: false
+          cache-db: true
+          grype-version: v0.118.0
+
+      - name: Upload code-scanning evidence
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          sarif_file: grype-index.sarif
+          category: grype-release-image
+
+      - name: Retain manifest evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-evidence-${{ github.sha }}-manifest
+          path: |
+            manifest.json
+            image.spdx.json
+            trivy-index-all.json
+            grype-index.sarif
+            grype-index-all.json
+          if-no-files-found: error
+          retention-days: 90
+
+  sign:
+    name: attest, sign, and independently verify
+    needs: [validate, publish, scan]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: Download complete evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-evidence-${{ github.sha }}-*
+          path: evidence
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Create digest-bound evidence manifest
+        env:
+          AMD64_DIGEST: ${{ needs.publish.outputs.amd64_digest }}
+          ARM64_DIGEST: ${{ needs.publish.outputs.arm64_digest }}
+          DIGEST: ${{ needs.publish.outputs.digest }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          REVISION: ${{ needs.validate.outputs.revision }}
+        run: |
+          jq -n --arg image "${IMAGE}" --arg digest "${DIGEST}" \
+            --arg amd64 "${AMD64_DIGEST}" --arg arm64 "${ARM64_DIGEST}" \
+            --arg tag "${RELEASE_TAG}" --arg revision "${REVISION}" \
+            '{schema_version:1,image:$image,digest:$digest,architectures:{amd64:$amd64,arm64:$arm64},tag:$tag,revision:$revision}' \
+            > release-evidence.json
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 \
+            --numeric-owner -czf release-evidence.tar.gz evidence
+          sha256sum release-evidence.tar.gz > SHA256SUMS
+
+      - name: Attest architecture and manifest evidence with GitHub OIDC
+        env:
+          AMD64_DIGEST: ${{ needs.publish.outputs.amd64_digest }}
+          ARM64_DIGEST: ${{ needs.publish.outputs.arm64_digest }}
+          DIGEST: ${{ needs.publish.outputs.digest }}
+        run: |
+          cosign attest --yes --type spdxjson \
+            --predicate "evidence/release-evidence-${GITHUB_SHA}-amd64/image-amd64.spdx.json" \
+            --bundle amd64-sbom.sigstore.json "${IMAGE}@${AMD64_DIGEST}"
+          cosign attest --yes --type spdxjson \
+            --predicate "evidence/release-evidence-${GITHUB_SHA}-arm64/image-arm64.spdx.json" \
+            --bundle arm64-sbom.sigstore.json "${IMAGE}@${ARM64_DIGEST}"
+          cosign attest --yes --type https://datopsis.dev/attestations/build-provenance/v1 \
+            --predicate "evidence/release-evidence-${GITHUB_SHA}-amd64/provenance-amd64.json" \
+            --bundle amd64-provenance.sigstore.json "${IMAGE}@${AMD64_DIGEST}"
+          cosign attest --yes --type https://datopsis.dev/attestations/build-provenance/v1 \
+            --predicate "evidence/release-evidence-${GITHUB_SHA}-arm64/provenance-arm64.json" \
+            --bundle arm64-provenance.sigstore.json "${IMAGE}@${ARM64_DIGEST}"
+          cosign attest --yes --type spdxjson \
+            --predicate "evidence/release-evidence-${GITHUB_SHA}-manifest/image.spdx.json" \
+            --bundle manifest-sbom.sigstore.json "${IMAGE}@${DIGEST}"
+          cosign attest --yes --type https://datopsis.dev/attestations/release-evidence/v1 \
+            --predicate release-evidence.json --bundle release-evidence.sigstore.json \
+            "${IMAGE}@${DIGEST}"
+          cosign sign --yes --bundle image.sigstore.json "${IMAGE}@${DIGEST}"
+
+      - name: Verify issuer, workflow identity, digest, signature, and SBOM policy
+        env:
+          DIGEST: ${{ needs.publish.outputs.digest }}
+          EXPECTED_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/release.yml@refs/tags/${{ needs.validate.outputs.tag }}
+        run: |
+          cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity "${EXPECTED_IDENTITY}" --bundle image.sigstore.json \
+            "${IMAGE}@${DIGEST}"
+          cosign verify-attestation --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity "${EXPECTED_IDENTITY}" --type spdxjson \
+            --bundle manifest-sbom.sigstore.json "${IMAGE}@${DIGEST}"
+
+      - name: Retain signature and attestation bundles
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-signatures-${{ github.sha }}
+          path: |
+            *.sigstore.json
+            release-evidence.json
+            release-evidence.tar.gz
+            SHA256SUMS
+          if-no-files-found: error
+          retention-days: 90
+
+  release:
+    name: publish durable release evidence
+    needs: [validate, publish, sign]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Download release signatures
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-signatures-${{ github.sha }}
+          path: release-assets
+      - name: Create GitHub Release only after every gate succeeds
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+        run: >-
+          gh release create "${RELEASE_TAG}" --verify-tag
+          --title "${RELEASE_TAG}" --generate-notes
+          release-assets/**/*
