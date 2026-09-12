@@ -78,6 +78,7 @@ class ReleaseTagTests(unittest.TestCase):
 
     def validate(self, tag=GOOD_TAG, *options, environment=None):
         env = os.environ.copy()
+        env.pop("GITHUB_SHA", None)
         if environment:
             env.update(environment)
         return subprocess.run(
