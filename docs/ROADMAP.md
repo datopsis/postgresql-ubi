@@ -10,6 +10,53 @@ release asset, qualification record, or external-platform test record. A green
 job alone is not sufficient where an item also requires human analysis, an
 external environment, a support decision, or acceptance of residual risk.
 
+## Shutdown handoff (2026-09-12)
+
+This section is the durable restart point. The detailed checklists below remain
+the authority if this summary and a package checklist ever differ.
+
+- The repository and image are `datopsis/postgresql-ubi`, the maintained major
+  line is PostgreSQL 18, and the current development baseline is PostgreSQL
+  18.6 on UBI 9 Minimal/Micro. The version is not frozen for release until
+  Package 7 reviews current upstream inputs.
+- Packages 1 through 5 are implemented and merged to `main`. Their merge
+  commits are `dfce506` (Package 1, PR #3), `805d41d` (Package 2, PR #4),
+  `4984137` (Package 3, PR #5), `dc99012` (Package 4, PR #6), and `8a6e60c`
+  (Package 5, PR #8). The last verified project revision before this handoff is
+  `8a6e60c570954acfc5dfb7e769731b670293dddf`.
+- The detailed v1 use cases and executable deployment steps are already
+  captured in `docs/DEPLOYMENT.md`, with the runtime security contract in
+  `docs/RUNTIME-SECURITY.md` and persistence, backup, restore, update,
+  rollback, and recovery procedures in `docs/STORAGE.md`. Package 6 must
+  qualify those procedures on named platforms; their existence is not a
+  platform-support claim.
+- Package 5 added the authoritative source register, OSCAL component
+  definition, generated control views, threat model, architecture and trust
+  boundaries, vulnerability/incident/exception processes, cryptographic
+  boundary, and native-architecture SCAP discovery. Initial control
+  classifications still require independent review. SCAP remains report-only.
+- No public image, release tag, GitHub Release, or supported production
+  configuration has been published. Development and integration evidence is
+  not release-candidate evidence. There is no FIPS validation, STIG
+  certification, system authorization, deployment-compliance claim, or broad
+  Podman, Docker, Kubernetes, or OpenShift support claim.
+
+Resume with **Package 6**. First select and record the exact RHEL 9, kernel,
+Podman, OCI runtime, SELinux, cgroup v2, storage, and architecture qualification
+matrix. Then implement and exercise the rootless Quadlet profile, logging and
+monitoring path, backup/restore and failure cases, Docker compatibility,
+OpenShift restricted-SCC preview, and connected/controlled-network procedures.
+Record results in `docs/QUALIFICATION.md` and complete `docs/PRODUCTION.md`.
+Do not advance to Package 7 until the exact supported profile has external-host
+evidence and all other platform combinations are explicitly classified.
+
+Packages 7 and 8 remain the release boundary: freeze and review current
+PostgreSQL/PGDG/UBI inputs, regenerate candidate-bound evidence, disposition
+all vulnerability and licensing findings, complete independent security and
+release review, rehearse publication, and only then publish the signed immutable
+GHCR digest and matching GitHub Release. Every unchecked item below remains
+open; none is implicitly waived by Packages 1 through 5 being complete.
+
 ## Evidence lifecycle
 
 Evidence has three levels:
@@ -82,7 +129,7 @@ Work proceeds in this dependency order:
 3. **Complete:** close the database security, storage, lifecycle, TLS, logging, backup,
    restore, and upgrade test matrix.
 4. **Complete:** add the release pipeline and remaining supply-chain controls.
-5. Complete the cybersecurity requirement analysis, threat model, control
+5. **Complete:** add the cybersecurity requirement analysis, threat model, control
    artifacts, tailored SCAP evidence, and vulnerability policy.
 6. Qualify rootless Podman and the selected operational profile on an exact
    host, then make explicit Docker, OpenShift, and disconnected-environment
@@ -149,7 +196,7 @@ the frozen candidate and do not by themselves close the gates below.
 owners, and required evidence without turning planned qualification into a
 current support claim.
 
-## Package 2: artifact lock and hermetic assembly
+## Package 2: artifact lock and hermetic assembly (complete)
 
 Implement the complete contract in `docs/ARTIFACT-ACQUISITION.md`.
 
@@ -201,7 +248,7 @@ artifact test groups passed their malformed, tampered, unsigned,
 unapproved-key, wrong-version, wrong-architecture, duplicate, missing,
 unexpected, wrong-base, and source-mismatch cases fail closed.
 
-## Package 3: database security and runtime contract
+## Package 3: database security and runtime contract (complete)
 
 ### Initialization, identity, and authentication
 
@@ -339,7 +386,7 @@ TLS rotation/negative, vulnerability, SBOM, and repository gates at revision
 published, scanned, attested, signed, and independently verified with only the
 documented least privileges.
 
-## Package 5: cybersecurity engineering and review package
+## Package 5: cybersecurity engineering and review package (complete)
 
 ### Authoritative requirements and control ownership
 
