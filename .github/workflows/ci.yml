@@ -37,12 +37,24 @@ jobs:
           python -m pip install --require-hashes --only-binary=:all:
           --disable-pip-version-check
           --requirement .github/requirements/pre-commit.txt
+          --requirement .github/requirements/cybersecurity.txt
 
       - name: Run repository checks
         run: pre-commit run --all-files --show-diff-on-failure
 
       - name: Run artifact lock negative tests
         run: python -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Validate OSCAL component definition against the official schema
+        run: |
+          schema_file="$(mktemp)"
+          trap 'rm -f "${schema_file}"' EXIT
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --output "${schema_file}" \
+            https://github.com/usnistgov/OSCAL/releases/download/v1.2.3/oscal_component_schema.json
+          echo '95e76881151ececd5cb1a93ff0f70ad74b8cc1aa58771626ac8b262bf2c8e001  '"${schema_file}" \
+            | sha256sum --check --strict
+          python scripts/cybersecurity.py --check --oscal-schema "${schema_file}"
 
       - name: Validate committed artifact locks
         run: |
@@ -193,6 +205,18 @@ jobs:
           IMAGE: ${{ env.TEST_IMAGE }}
         run: bash tests/tls.sh
 
+      - name: Record cryptographic linkage inventory
+        run: |
+          docker run --rm --entrypoint /bin/sh "${TEST_IMAGE}" -ec '
+            uname -m
+            /usr/pgsql-18/bin/postgres --version
+            /usr/pgsql-18/bin/pg_config --configure
+            ldd /usr/pgsql-18/bin/postgres
+            ldd /usr/pgsql-18/bin/psql
+            if command -v openssl >/dev/null; then openssl version -a; else echo "openssl executable absent"; fi
+          ' > "crypto-inventory-${{ matrix.architecture }}.txt"
+          test -s "crypto-inventory-${{ matrix.architecture }}.txt"
+
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -253,6 +277,7 @@ jobs:
             ${{ env.PROVENANCE_FILE }}
             ${{ env.GRYPE_SARIF }}
             ${{ env.GRYPE_ALL }}
+            crypto-inventory-${{ matrix.architecture }}.txt
           if-no-files-found: warn
           retention-days: 14
 

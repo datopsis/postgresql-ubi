@@ -1,4 +1,6 @@
 {
   "compliance_as_code": "0.1.81",
-  "status": "planned-input-not-yet-qualified"
+  "openscap": "1.3.9+dfsg-1.1ubuntu2",
+  "oscal": "1.2.3",
+  "status": "report-only-discovery"
 }

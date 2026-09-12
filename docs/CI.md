@@ -14,12 +14,20 @@ committed lock, verifies the bundle and full key fingerprints, pre-pulls only
 the digest-pinned bases, and performs a clean build with network access and
 additional pulls disabled.
 
+The separate `SCAP discovery` workflow performs report-only native AMD64 and
+ARM64 filesystem assessment with pinned OpenSCAP and ComplianceAsCode inputs.
+It exports a never-started image with numeric ownership preserved, blocks tool
+and evidence failures, and retains findings without treating them as host,
+deployment, STIG, or compliance results. See [SCAP.md](SCAP.md).
+
 ## Local repository checks
 
 ```console
 python -m pip install --require-hashes --only-binary=:all: \
-  --requirement .github/requirements/pre-commit.txt
+  --requirement .github/requirements/pre-commit.txt \
+  --requirement .github/requirements/cybersecurity.txt
 pre-commit run --all-files --show-diff-on-failure
+python scripts/cybersecurity.py --check
 ```
 
 ## Local image checks

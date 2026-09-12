@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xccdf:Tailoring xmlns:xccdf="http://checklists.nist.gov/xccdf/1.2"
+  id="xccdf_datopsis_tailoring_postgresql_ubi">
+  <xccdf:benchmark href="ssg-rhel9-xccdf.xml"/>
+  <xccdf:version time="2026-09-12T12:00:00Z">1</xccdf:version>
+  <xccdf:Profile id="xccdf_datopsis_profile_image_filesystem_discovery">
+    <xccdf:title>postgresql-ubi image filesystem discovery</xccdf:title>
+    <xccdf:description>Report-only discovery limited to file ownership and privilege bits in the exported image root filesystem. This is not a RHEL 9 STIG profile.</xccdf:description>
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_no_files_unowned_by_user" selected="true"/>
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_file_permissions_unauthorized_world_writable" selected="true"/>
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_file_permissions_unauthorized_suid" selected="true"/>
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_file_permissions_unauthorized_sgid" selected="true"/>
+  </xccdf:Profile>
+</xccdf:Tailoring>

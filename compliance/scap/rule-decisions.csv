@@ -1,0 +1,15 @@
+rule_id,decision,ownership,rationale,result_policy
+no_files_unowned_by_user,include,image-owned,The repository fixes every file and numeric owner in the immutable image filesystem.,report-only
+no_files_unowned_by_group,exclude,research-required,ComplianceAsCode 0.1.81 RHEL 9 does not contain this proposed rule identifier; image group ownership remains covered by build policy and requires a reviewed SCAP rule before inclusion.,manual-review
+file_permissions_unauthorized_world_writable,include,image-owned,The repository controls mode bits in immutable image layers.,report-only
+file_permissions_unauthorized_suid,include,image-owned,The repository prohibits unexpected setuid files in immutable image layers.,report-only
+file_permissions_unauthorized_sgid,include,image-owned,The repository prohibits unexpected setgid files in immutable image layers.,report-only
+runtime-kernel-and-sysctl-rules,exclude,inherited,A root filesystem export cannot establish host kernel or namespace runtime state.,not-applicable-to-evidence-boundary
+service-and-systemd-rules,exclude,not-applicable,The application image has no systemd booted operating system or host services.,not-applicable
+boot-firmware-and-partition-rules,exclude,not-applicable,The image contains no bootloader firmware or host partition table.,not-applicable
+interactive-account-pam-and-ssh-rules,exclude,not-applicable,The image is not an interactive login host and contains no SSH service.,not-applicable
+audit-siem-and-time-rules,exclude,inherited,The runtime host and deployment provide audit collection retention and trusted time.,deployment-owned
+firewall-dns-and-network-policy-rules,exclude,inherited,The image cannot configure host or orchestrator network enforcement.,deployment-owned
+postgresql-configuration-rules,exclude,research-required,RHEL host content does not assess PostgreSQL and vendor PostgreSQL STIG commands are not proven applicable to PGDG 18.,manual-review
+rpm-verification-rules,exclude,research-required,Offline RPM probes have known boundary limitations and need false-positive review before adoption.,manual-review
+cryptographic-policy-and-fips-rules,exclude,research-required,Filesystem inspection cannot prove active provider mode or an applicable CMVP boundary.,manual-review

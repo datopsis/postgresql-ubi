@@ -47,3 +47,8 @@ but container releases use the upstream-derived format documented in
   policy; digest-bound SBOM, provenance, scanning, signing, verification, and
   evidence controls; upstream monitoring; emergency rebuild; and quarantine
   procedures.
+- Added the Package 5 cybersecurity engineering set: authoritative source
+  register, schema-validated OSCAL component definition, generated control
+  views, architecture and threat model, report-only native SCAP discovery,
+  cryptographic claim gate, vulnerability exceptions, incident response, and
+  inherited deployment responsibility matrix.

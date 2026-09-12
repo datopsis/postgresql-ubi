@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-09-12",
+  "sources": [
+    {
+      "id": "nist-sp800-53r5",
+      "publisher": "National Institute of Standards and Technology",
+      "title": "Security and Privacy Controls for Information Systems and Organizations",
+      "release": "SP 800-53 Rev. 5 Update 1 publication PDF; supplemental control content Release 5.2.0",
+      "publication_date": "2020-12-10",
+      "retrieved": "2026-09-12",
+      "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf",
+      "sha256": "fc63bcd61715d0181dd8e85998b1e6201ae3515fc6626102101cab1841e11ec6",
+      "status": "current",
+      "redistribution": "Reference only; NIST publication is not redistributed by this repository."
+    },
+    {
+      "id": "nist-sp800-53ar5",
+      "publisher": "National Institute of Standards and Technology",
+      "title": "Assessing Security and Privacy Controls in Information Systems and Organizations",
+      "release": "SP 800-53A Rev. 5 publication PDF; supplemental assessment content Release 5.2.0",
+      "publication_date": "2022-01-25",
+      "retrieved": "2026-09-12",
+      "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53Ar5.pdf",
+      "sha256": "75665570048b969ad465a4f4f1db425ce505c374951c2c64e462949c6b21be47",
+      "status": "current",
+      "redistribution": "Reference only; NIST publication is not redistributed by this repository."
+    },
+    {
+      "id": "disa-database-srg",
+      "publisher": "Defense Information Systems Agency",
+      "title": "Database Security Requirements Guide",
+      "release": "Version 4 Release 5",
+      "publication_date": "2026-04-28",
+      "retrieved": "2026-09-12",
+      "url": "https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_Database_V4R5_SRG.zip",
+      "sha256": "c604242fe07c4f4d04d5723d559cfa621b3313ce3bf44809b71f2bc0f94f20b9",
+      "status": "current",
+      "redistribution": "Reference only; DISA archive is not redistributed."
+    },
+    {
+      "id": "disa-container-platform-srg",
+      "publisher": "Defense Information Systems Agency",
+      "title": "Container Platform Security Requirements Guide",
+      "release": "Version 2 Release 4",
+      "publication_date": "2026-04-28",
+      "retrieved": "2026-09-12",
+      "url": "https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_Container_Platform_V2R4_SRG.zip",
+      "sha256": "975a9e421e62e0ea52b1824e4a719aee87eed9070d5a3145fa9817f6498d99fe",
+      "status": "current",
+      "redistribution": "Reference only; DISA archive is not redistributed."
+    },
+    {
+      "id": "disa-rhel9-stig",
+      "publisher": "Defense Information Systems Agency",
+      "title": "Red Hat Enterprise Linux 9 Security Technical Implementation Guide",
+      "release": "Version 2 Release 9",
+      "publication_date": "2026-07-10",
+      "retrieved": "2026-09-12",
+      "url": "https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_RHEL_9_V2R9_STIG.zip",
+      "sha256": "1875de2543d01695c5a346c51888cc336113e9199bfe6726d74a08de286ca1ae",
+      "status": "current",
+      "redistribution": "Reference only; DISA archive is not redistributed."
+    },
+    {
+      "id": "disa-crunchy-postgres16-stig",
+      "publisher": "Defense Information Systems Agency",
+      "title": "Crunchy Data Postgres 16 Security Technical Implementation Guide",
+      "release": "Version 1 Release 3",
+      "publication_date": "2026-07-10",
+      "retrieved": "2026-09-12",
+      "url": "https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_CD_Postgres_16_V1R3_STIG.zip",
+      "sha256": "2970f7d32e18dce3f0d83739a85943927cf64c5373f58cb100d8889b0ba29a28",
+      "status": "reference",
+      "redistribution": "Reference only. It targets Crunchy Data PostgreSQL 16, not PGDG PostgreSQL 18; commands are not adopted."
+    },
+    {
+      "id": "oscal-component-schema",
+      "publisher": "National Institute of Standards and Technology",
+      "title": "OSCAL Component Definition JSON Schema",
+      "release": "1.2.3",
+      "publication_date": "2026-08-07",
+      "retrieved": "2026-09-12",
+      "url": "https://github.com/usnistgov/OSCAL/releases/download/v1.2.3/oscal_component_schema.json",
+      "sha256": "95e76881151ececd5cb1a93ff0f70ad74b8cc1aa58771626ac8b262bf2c8e001",
+      "status": "current",
+      "redistribution": "Not vendored; CI downloads and verifies this schema before validation."
+    },
+    {
+      "id": "compliance-as-code",
+      "publisher": "ComplianceAsCode project",
+      "title": "SCAP Security Guide prebuilt release",
+      "release": "0.1.81",
+      "publication_date": "2026-06-01",
+      "retrieved": "2026-09-12",
+      "url": "https://github.com/ComplianceAsCode/content/releases/download/v0.1.81/scap-security-guide-0.1.81.zip",
+      "sha256": "865e28b793e1e65f7f0102434bc7d962324a4b9324591e60742f1e9ce375172c",
+      "status": "current",
+      "redistribution": "GPL-2.0-or-later upstream content is downloaded and verified by CI, not redistributed."
+    },
+    {
+      "id": "postgresql18-authentication",
+      "publisher": "PostgreSQL Global Development Group",
+      "title": "PostgreSQL 18 Password Authentication",
+      "release": "18 current documentation",
+      "publication_date": "2026-09-12",
+      "retrieved": "2026-09-12",
+      "url": "https://www.postgresql.org/docs/18/auth-password.html",
+      "sha256": "1ec2ae88d4cb95bb8b109ab8e60fa982cd37301a5b414b086ab6ee5042515b82",
+      "status": "current",
+      "redistribution": "Reference only; documentation is not redistributed."
+    },
+    {
+      "id": "rhel9-security-hardening",
+      "publisher": "Red Hat",
+      "title": "Red Hat Enterprise Linux 9 Security hardening",
+      "release": "RHEL 9",
+      "publication_date": "2026-09-12",
+      "retrieved": "2026-09-12",
+      "url": "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/pdf/security_hardening/Red_Hat_Enterprise_Linux-9-Security_hardening-en-US.pdf",
+      "sha256": "71481a5ca4e132c968275561283fa8f9674ac37fcd01ac1e7d1f497b554395f9",
+      "status": "current",
+      "redistribution": "Reference only; Red Hat documentation is not redistributed."
+    }
+  ]
+}
