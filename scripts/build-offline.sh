@@ -45,6 +45,8 @@ else
 fi
 build_arguments=(--file Containerfile --tag "${image}" --network=none \
     --pull="${pull_flag}" --no-cache \
+    --label "io.datopsis.ubi.builder=${builder}" \
+    --label "io.datopsis.ubi.runtime=${runtime_base}" \
     --build-arg UBI_MINIMAL_IMAGE=localhost/postgresql-ubi-builder:locked \
     --build-arg UBI_MICRO_IMAGE=localhost/postgresql-ubi-runtime:locked \
     --build-arg POSTGRESQL_SIGNER_FINGERPRINT="${postgresql_signer}" \

@@ -1,7 +1,10 @@
+import copy
 import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+
+import jsonschema
 
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "cybersecurity.py"
@@ -40,6 +43,28 @@ class CybersecurityTests(unittest.TestCase):
             schema.write_text("{}", encoding="utf-8")
             with self.assertRaisesRegex(CYBER.ValidationError, "digest mismatch"):
                 CYBER.validate_schema({}, schema)
+
+    def test_pending_findings_cannot_carry_approval_or_be_unapproved_exceptions(self):
+        document = CYBER.load_json(CYBER.EXCEPTIONS)
+        schema = CYBER.load_json(CYBER.ROOT / "compliance/schemas/vulnerability-exception.schema.json")
+        jsonschema.Draft202012Validator(schema).validate(document)
+        entry = {field: "value" for field in CYBER.EXCEPTION_FIELDS}
+        entry.update(image_digest="sha256:" + "a" * 64, architecture="amd64",
+                     expires="2026-11-15", approval="")
+        document = {"schema_version": 1, "exceptions": [], "pending_findings": [entry]}
+        for change in ("forged", "missing", "promoted"):
+            with self.subTest(change=change):
+                invalid = copy.deepcopy(document)
+                if change == "forged":
+                    invalid["pending_findings"][0]["approval"] = "Someone approved"
+                elif change == "missing":
+                    del invalid["pending_findings"][0]["approval"]
+                else:
+                    invalid["exceptions"].append(invalid["pending_findings"].pop())
+                with self.assertRaises(CYBER.ValidationError):
+                    CYBER.validate_exceptions(invalid)
+                with self.assertRaises(jsonschema.ValidationError):
+                    jsonschema.Draft202012Validator(schema).validate(invalid)
 
 
 if __name__ == "__main__":
