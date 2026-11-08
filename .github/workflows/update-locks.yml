@@ -110,6 +110,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Retain resolver inventories
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: resolution-inventories-${{ matrix.architecture }}
+          path: resolution-output/*-inventory.tsv
+          if-no-files-found: error
+          retention-days: 7
+
   propose:
     name: propose reviewed-input changes
     needs: [bases, resolve]
@@ -140,5 +148,5 @@ jobs:
 
       - name: Validate and open a pull request when inputs changed
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.LOCK_UPDATE_TOKEN || github.token }}
         run: bash scripts/propose-lock-update.sh

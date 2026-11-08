@@ -65,13 +65,37 @@ policy invalidates earlier release-candidate evidence.
 
 ## Commands and review flow
 
-`artifacts/lock-inputs.json` is the small, human-reviewed selection. The manual
-**Propose artifact lock update** workflow resolves both native closures and
-retains candidate locks and inventories; it never commits, merges, or publishes
-them. A maintainer compares package and source changes, supplier advisories,
-licenses, architecture differences, and base digests before replacing
-`artifacts/locks/amd64.json` and `artifacts/locks/arm64.json` through a pull
-request.
+`artifacts/lock-inputs.json` is the small, human-reviewed selection. The weekly
+and manually dispatched **Propose artifact lock update** workflow resolves the
+selected UBI minor-release tags once, verifies their manifest-index hashes and
+AMD64/ARM64 coverage, then resolves both native RPM closures against those same
+pins. It retains candidate locks and inventories and opens a pull request when
+base or package content changes. Identical resolutions preserve `generated_at`
+and do not open timestamp-only PRs. PostgreSQL seeds and signing keys still
+require an explicit reviewed input change.
+
+PR creation runs only from `main`, after both resolvers succeed. Repository
+Settings → Actions → General must allow GitHub Actions to create pull requests
+(`can_approve_pull_request_reviews` in the API). Only the proposal job receives
+contents/PR write access and permission to dispatch CI. It creates a fresh
+`automation/artifact-locks-<run>-<attempt>` branch without force-pushing or
+overwriting an earlier proposal. CI is explicitly dispatched on that branch;
+token-created PR events may otherwise wait for approval or not start. Review
+and close superseded proposals rather than transferring approvals.
+
+If organization policy disallows token-created PRs, an owner must either enable
+that permission at the organization and repository levels, or configure the
+repository secret `LOCK_UPDATE_TOKEN` with a dedicated identity restricted to
+this repository (contents, pull requests, and Actions write). Do not store a
+personal session credential in the repository. Without either authorization,
+the proposal job fails instead of reporting a misleading successful update.
+
+On a development branch, dispatch with `propose=false` to exercise resolution
+without creating another PR. The workflow never merges or publishes images.
+A maintainer must compare package/source changes, supplier advisories, licenses,
+architecture differences, base digests, and all native CI results before merge.
+Changed image inputs invalidate prior candidate evidence and subject-specific
+human sign-off; automation supplies no review or approval identity.
 
 Ordinary native assembly uses:
 
