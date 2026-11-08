@@ -116,6 +116,13 @@ def main() -> int:
         "source_packages": sources,
     }
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
+    # A successful weekly resolution with identical inputs must not create a PR
+    # just because the wall clock changed. Changed subjects get fresh evidence.
+    if arguments.output.exists():
+        previous = validate_lock(arguments.output)
+        comparison = dict(lock, generated_at=previous["generated_at"])
+        if comparison == previous:
+            lock = previous
     arguments.output.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8", newline="\n")
     validate_lock(arguments.output)
     return 0
