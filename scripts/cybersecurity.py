@@ -165,8 +165,15 @@ def validate_exceptions(document: Any) -> None:
     entries = document.get("exceptions")
     if not isinstance(entries, list):
         raise ValidationError("exceptions must be a list")
-    for index, entry in enumerate(entries):
-        missing = [field for field in EXCEPTION_FIELDS if not entry.get(field)]
+    pending = document.get("pending_findings", [])
+    if not isinstance(pending, list):
+        raise ValidationError("pending_findings must be a list")
+    for index, entry in enumerate(entries + pending):
+        is_pending = index >= len(entries)
+        if is_pending and entry.get("approval") != "":
+            raise ValidationError(f"pending finding {index}: approval must be explicitly empty")
+        missing = [field for field in EXCEPTION_FIELDS
+                   if not entry.get(field) and not (is_pending and field == "approval")]
         if missing:
             raise ValidationError(f"exception {index}: missing {', '.join(missing)}")
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", entry["image_digest"]):

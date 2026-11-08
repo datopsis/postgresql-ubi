@@ -83,6 +83,9 @@ mandatory in the build and CI.
 The [2026-11-02 run](https://github.com/datopsis/postgresql-ubi/actions/runs/41499475215)
 only generated and uploaded candidates. It used a hard-coded old minimal base,
 never resolved either mutable UBI tag, and had no commit, push, or PR job.
+Its retained AMD64 candidate already contained the fixed PCRE2, OpenSSL,
+ca-certificates, expat, libevent and libxml2 RPMs, but still named the old base
+indexes. Those candidate locks were never committed for ordinary CI to consume.
 The new workflow resolves common multi-architecture base pins, regenerates both
 native locks, and proposes changed content with an explicit CI dispatch.
 Timestamp-only changes do not produce PRs. Proposal branches never force-push.
@@ -107,7 +110,35 @@ pcre2/pcre2-syntax. Every affected package is refreshed above, including PCRE2
 
 Trivy and Grype thresholds and fix-status policies are unchanged. No scanner
 ignore, exception approval, or human sign-off has been added. nginx is absent
-from both RPM closures; nginx-specific findings must not be invented.
+from both RPM closures and both SBOMs.
+
+[Native PR CI](https://github.com/datopsis/postgresql-ubi/actions/runs/42441672580)
+passed both image jobs, including all runtime tests, Trivy and Grype. The full
+Grype reports retain 19 High matches per architecture (five distinct CVEs), all
+marked `not-fixed` by its Red Hat 9 data; no Critical matches remain:
+
+| Advisory | Component | Fix status and exposure requiring owner review |
+| --- | --- | --- |
+| CVE-2026-115506 | expat | Upstream fix exists; no fixed RPM in current UBI resolution. Untrusted XML entity expansion can exhaust CPU. |
+| CVE-2026-76641 | expat | Upstream patch exists; no fixed RPM in current UBI resolution. Requires Expat external-entity parser processing. |
+| CVE-2026-53613 | util-linux source family | No fixed RPM in current UBI resolution. Privileged fstab user/users mount race; this image strips setuid/setgid and runs non-root with no capabilities in documented deployments. |
+| CVE-2026-53615 | util-linux source family | Upstream fix exists; no fixed RPM in current UBI resolution. Requires probing a crafted partition image; ordinary PostgreSQL service use does not do this. |
+| CVE-2026-2007 | PGDG PostgreSQL packages | Vendor/scanner mismatch: [PostgreSQL fixes this in 18.2](https://www.postgresql.org/support/security/CVE-2026-2007/), while the image runs 18.6 and has no contrib RPM. The raw Red Hat namespace match has no version bound. |
+
+The Expat linkage inventory does not show libexpat in postgres/psql, but indirect
+reachability is not ruled out. Upstream and Red Hat references and fuller notes
+are recorded per architecture in `compliance/vulnerability-exceptions.json`,
+under `pending_findings`, with empty `approval` and a 2026-11-15 review deadline.
+The approved `exceptions` array remains empty. These are observations of exact
+CI image digests, not approvals for those images or subsequent rebuilds. Red
+Hat's security-data API returned HTTP 403 during cross-checking; UBI fix
+availability above is supported by native resolution and scanner vendor data.
+
+[Repeated native resolution](https://github.com/datopsis/postgresql-ubi/actions/runs/42441688764)
+passed on both architectures and produced byte-identical locks, including the
+original generation timestamps. The proposal job was intentionally skipped on
+the development branch; local integration tests verify push, PR creation and CI
+dispatch ordering against a temporary Git remote with a stubbed GitHub CLI.
 
 Local Podman was installed and attempted both rootless and with sudo; both
 failed with `cannot clone: Operation not permitted`. Native GitHub CI supplies
@@ -116,4 +147,4 @@ Local Python checks use the pinned tool versions with wheels for Python 3.11
 ARM64; the committed hash-locked CI requirements target Python 3.13 AMD64.
 Those CI requirement locks remain unchanged.
 
-Final PR CI and remaining findings will be recorded after scans finish.
+Final-head CI results are recorded in [PR #25](https://github.com/datopsis/postgresql-ubi/pull/25).
