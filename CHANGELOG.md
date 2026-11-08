@@ -8,6 +8,12 @@ but container releases use the upstream-derived format documented in
 
 ## [Unreleased]
 
+### Fixed
+
+- Regenerated the CI tool requirements with complete version pins and wheel
+  hashes, including virtualenv's packaging dependency, while retaining
+  filelock 3.x. Added inputs and commands for repeatable regeneration.
+
 ### Added
 
 - Established the `postgresql-ubi` repository and planned GHCR image identity.

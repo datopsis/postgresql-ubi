@@ -1,0 +1,11 @@
+# Regenerate with Python 3.13 and pip-tools 7.6.2:
+# pip-compile --generate-hashes --no-emit-index-url --no-emit-trusted-host \
+#   --no-reuse-hashes --pip-args="--only-binary=:all:" \
+#   --output-file=.github/requirements/cybersecurity.txt .github/requirements/cybersecurity.in
+attrs==26.1.0
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+referencing==0.37.0
+regex==2026.9.29
+rpds-py==2026.9.1
+typing-extensions==4.16.0
