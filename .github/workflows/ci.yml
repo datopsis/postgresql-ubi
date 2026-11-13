@@ -6,7 +6,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "23 7 * * 1"
+    - cron: "23 7 * * *"
   workflow_dispatch:
 
 permissions:
@@ -113,6 +113,7 @@ jobs:
       PROVENANCE_FILE: provenance-${{ matrix.architecture }}.json
       GRYPE_SARIF: grype-${{ matrix.architecture }}.sarif
       GRYPE_ALL: grype-all-${{ matrix.architecture }}.json
+      TRIVY_ALL: trivy-all-${{ matrix.architecture }}.json
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -217,14 +218,15 @@ jobs:
           ' > "crypto-inventory-${{ matrix.architecture }}.txt"
           test -s "crypto-inventory-${{ matrix.architecture }}.txt"
 
-      - name: Scan image with Trivy
+      - name: Record all Trivy findings
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.TEST_IMAGE }}
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          severity: CRITICAL,HIGH
+          format: json
+          output: ${{ env.TRIVY_ALL }}
+          exit-code: "0"
+          ignore-unfixed: false
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
 
       - name: Generate SPDX SBOM with Syft
         uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
@@ -242,7 +244,7 @@ jobs:
           'download[.]postgresql[.]org|dnf-srpms[.]postgresql[.]org|cdn-ubi[.]redhat[.]com|security[.]access[.]redhat[.]com|RPM-GPG-KEY|[.]artifact-bundle|/tmp/artifacts'
           "${SBOM_FILE}" || true)"
 
-      - name: Scan Syft SBOM with Grype
+      - name: Record Grype SARIF
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         with:
           sbom: ${{ env.SBOM_FILE }}
@@ -250,7 +252,7 @@ jobs:
           output-file: ${{ env.GRYPE_SARIF }}
           severity-cutoff: high
           only-fixed: true
-          fail-build: true
+          fail-build: false
           cache-db: true
           grype-version: v0.118.0
 
@@ -267,6 +269,12 @@ jobs:
           cache-db: true
           grype-version: v0.118.0
 
+      - name: Gate on fixes installable from pinned UBI repositories
+        if: ${{ always() }}
+        env:
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: bash scripts/gate-vulnerabilities.sh
+
       - name: Retain image security artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -277,6 +285,8 @@ jobs:
             ${{ env.PROVENANCE_FILE }}
             ${{ env.GRYPE_SARIF }}
             ${{ env.GRYPE_ALL }}
+            ${{ env.TRIVY_ALL }}
+            vulnerability-gate-${{ matrix.architecture }}/
             crypto-inventory-${{ matrix.architecture }}.txt
           if-no-files-found: warn
           retention-days: 14
@@ -299,3 +309,32 @@ jobs:
         env:
           MATRIX_RESULT: ${{ needs.image.result }}
         run: test "${MATRIX_RESULT}" = success
+
+  track-vulnerabilities:
+    name: track UBI fix availability
+    needs: image
+    if: >-
+      always() && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Check out trusted monitoring code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download native reports, including failed gates
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: image-security-${{ github.sha }}-*
+          path: native-reports
+
+      - name: Update one tracking issue and notify on state changes
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/track_vulnerabilities.py --reports native-reports

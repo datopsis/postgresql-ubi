@@ -166,15 +166,6 @@ jobs:
           upload-artifact: false
           upload-release-assets: false
 
-      - name: Enforce Trivy release gate
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          input: ${{ env.OCI_ARCHIVE }}
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          severity: CRITICAL,HIGH
-
       - name: Record every Trivy finding
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -185,7 +176,7 @@ jobs:
           ignore-unfixed: false
           severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
 
-      - name: Enforce Grype release gate
+      - name: Record Grype release SARIF
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         with:
           sbom: ${{ env.SBOM_FILE }}
@@ -193,7 +184,7 @@ jobs:
           output-file: grype-${{ matrix.architecture }}.sarif
           severity-cutoff: high
           only-fixed: true
-          fail-build: true
+          fail-build: false
           cache-db: true
           grype-version: v0.118.0
 
@@ -208,6 +199,10 @@ jobs:
           fail-build: false
           cache-db: true
           grype-version: v0.118.0
+
+      - name: Gate on fixes installable from pinned UBI repositories
+        if: ${{ always() }}
+        run: bash scripts/gate-vulnerabilities.sh
 
       - name: Record OCI descriptor and image configuration
         run: |
@@ -234,6 +229,7 @@ jobs:
             ${{ env.PROVENANCE_FILE }}
             ${{ env.TRIVY_ALL }}
             ${{ env.GRYPE_ALL }}
+            vulnerability-gate-${{ matrix.architecture }}/
             grype-${{ matrix.architecture }}.sarif
             manifest-${{ matrix.architecture }}.json
             image-config-${{ matrix.architecture }}.json
@@ -337,15 +333,6 @@ jobs:
             | sort == ["amd64", "arm64"]
           ' manifest.json
 
-      - name: Enforce published-digest Trivy gate
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          image-ref: ${{ env.IMAGE }}@${{ needs.publish.outputs.digest }}
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          severity: CRITICAL,HIGH
-
       - name: Record every published-digest Trivy finding
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -366,7 +353,7 @@ jobs:
           upload-artifact: false
           upload-release-assets: false
 
-      - name: Enforce published-digest Grype gate
+      - name: Record published-digest Grype SARIF
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         with:
           sbom: image.spdx.json
@@ -374,7 +361,7 @@ jobs:
           output-file: grype-index.sarif
           severity-cutoff: high
           only-fixed: true
-          fail-build: true
+          fail-build: false
           cache-db: true
           grype-version: v0.118.0
 
@@ -390,6 +377,15 @@ jobs:
           cache-db: true
           grype-version: v0.118.0
 
+      - name: Gate published digest using the native UBI repositories
+        if: ${{ always() }}
+        env:
+          ARCHITECTURE: amd64
+        run: |
+          cp trivy-index-all.json trivy-all-amd64.json
+          cp grype-index-all.json grype-all-amd64.json
+          bash scripts/gate-vulnerabilities.sh
+
       - name: Upload code-scanning evidence
         uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
@@ -397,6 +393,7 @@ jobs:
           category: grype-release-image
 
       - name: Retain manifest evidence
+        if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-evidence-${{ github.sha }}-manifest
@@ -406,6 +403,7 @@ jobs:
             trivy-index-all.json
             grype-index.sarif
             grype-index-all.json
+            vulnerability-gate-amd64/
           if-no-files-found: error
           retention-days: 90
 

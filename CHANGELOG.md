@@ -10,6 +10,17 @@ but container releases use the upstream-derived format documented in
 
 ### Fixed
 
+- Regenerated both native RPM/source locks and refreshed the selected UBI base
+  digests. Updated the util-linux family to 2.37.4-28.el9_9.1, expat to
+  2.5.0-9.el9_9.4, and libxml2 to 2.9.13-18.el9_9.1, retaining PostgreSQL 18.6
+  and the installable-fix gate.
+
+- Gate vendor-fixed High/Critical UBI RPM findings on native repository
+  availability using the pinned builder configuration and RPM version ordering.
+  Fail closed on uncertainty and retain ordinary blocking for non-UBI findings.
+  Report unavailable fixes in CI/release evidence and a daily tracking issue
+  that notifies subscribers when availability or findings change.
+
 - Regenerated the CI tool requirements with complete version pins and wheel
   hashes, including virtualenv's packaging dependency, while retaining
   filelock 3.x. Added inputs and commands for repeatable regeneration.
