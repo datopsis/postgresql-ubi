@@ -10,6 +10,12 @@ but container releases use the upstream-derived format documented in
 
 ### Fixed
 
+- Gate vendor-fixed High/Critical UBI RPM findings on native repository
+  availability using the pinned builder configuration and RPM version ordering.
+  Fail closed on uncertainty and retain ordinary blocking for non-UBI findings.
+  Report unavailable fixes in CI/release evidence and a daily tracking issue
+  that notifies subscribers when availability or findings change.
+
 - Regenerated the CI tool requirements with complete version pins and wheel
   hashes, including virtualenv's packaging dependency, while retaining
   filelock 3.x. Added inputs and commands for repeatable regeneration.
