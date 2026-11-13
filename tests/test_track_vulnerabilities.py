@@ -48,6 +48,22 @@ class TrackingTests(unittest.TestCase):
             self.assertEqual(gh.call_args_list[1].args[:3], ("issue", "comment", "7"))
             self.assertEqual(gh.call_args_list[2].args[:3], ("issue", "edit", "7"))
 
+    def test_deferred_to_available_notifies(self):
+        path = self.root / "vulnerability-gate-amd64/gate.json"
+        data = json.loads(path.read_text())
+        row = dict(scanner="example", id="example-advisory", package="example-rpm",
+                   installed="1.0-1", severity="HIGH", fixed=["1.0-2"],
+                   decision="deferred", reason="vendor fix not yet available in UBI")
+        data["findings"] = [row]
+        path.write_text(json.dumps(data))
+        _, old_body = tracker.issue_body(self.root, "old-run")
+        row.update(decision="blocked", reason="fixed or newer RPM available in UBI")
+        path.write_text(json.dumps(data))
+        with patch.object(tracker, "gh", side_effect=[json.dumps([
+                dict(number=7, title=tracker.TITLE, body=old_body, state="OPEN")]), "", ""]) as gh:
+            self.assertEqual(tracker.publish(self.root, "run"), "updated and notified")
+            self.assertEqual(gh.call_args_list[1].args[:3], ("issue", "comment", "7"))
+
     def test_first_run_creates_one_issue(self):
         with patch.object(tracker, "gh", side_effect=["[]", "created"]) as gh:
             self.assertEqual(tracker.publish(self.root, "run"), "created")

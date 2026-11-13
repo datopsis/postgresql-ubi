@@ -28,12 +28,17 @@ class RpmVersions(unittest.TestCase):
     def test_query_compares_all_versions_and_reuses_native_metadata(self):
         query = UbiQuery.__new__(UbiQuery)
         query.cache = {}
+        query.architecture = "x86_64"
         query.base = Mock()
         packages = [Mock(evr="1.0-1"), Mock(evr="1.0-3")]
         query.base.sack.query.return_value.available.return_value.filter.return_value = packages
         self.assertTrue(query("example-rpm", "x86_64", ["1.0-2"])["available"])
         self.assertFalse(query("example-rpm", "x86_64", ["1.0-4"])["available"])
         query.base.sack.query.assert_called_once()
+        query.base.sack.query.return_value.available.return_value.filter.assert_called_once_with(
+            name="example-rpm", arch=["x86_64", "noarch"])
+        with self.assertRaises(ValueError):
+            query("example-rpm", "aarch64", ["1.0-2"])
         with self.assertRaises(ValueError):
             query("example-rpm", "x86_64", [">=1.0-2"])
 
