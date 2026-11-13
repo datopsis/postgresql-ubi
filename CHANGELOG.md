@@ -10,6 +10,11 @@ but container releases use the upstream-derived format documented in
 
 ### Fixed
 
+- Regenerated both native RPM/source locks and refreshed the selected UBI base
+  digests. Updated the util-linux family to 2.37.4-28.el9_9.1, expat to
+  2.5.0-9.el9_9.4, and libxml2 to 2.9.13-18.el9_9.1, retaining PostgreSQL 18.6
+  and the installable-fix gate.
+
 - Gate vendor-fixed High/Critical UBI RPM findings on native repository
   availability using the pinned builder configuration and RPM version ordering.
   Fail closed on uncertainty and retain ordinary blocking for non-UBI findings.
