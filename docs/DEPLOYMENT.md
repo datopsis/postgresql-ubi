@@ -295,10 +295,15 @@ file is replaced on every start.
 
 ## 10. Create application roles and rotate credentials
 
-`POSTGRES_USER` creates the initial superuser; `POSTGRES_DB` optionally creates
-one database. These variables are bootstrap inputs, not ongoing account
-management. Connect through a protected administrative path and create a
-separate least-privilege login:
+`POSTGRES_USER` creates the initial superuser (default: `postgres`). On first
+start, `POSTGRES_DB` defaults to that role name when unset or empty, and the
+selected database is created with that role as owner, including when the names
+match. Selecting `postgres` uses the existing database without creating another;
+`template0`, `template1`, and names containing line breaks are rejected before
+initialization. Existing data skips database creation regardless of these
+variables. These variables are bootstrap inputs, not ongoing account management.
+Connect through a protected administrative path and create a separate
+least-privilege login:
 
 ```sql
 CREATE ROLE app LOGIN PASSWORD 'generated-secret'

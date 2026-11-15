@@ -103,11 +103,18 @@ The first start of an empty `/var/lib/pgsql` volume requires exactly one of:
 - `POSTGRES_PASSWORD_FILE`, which is preferred for orchestrator-mounted
   secrets.
 
-`POSTGRES_USER` defaults to `postgres`. `POSTGRES_DB` optionally creates a
-database with that name and otherwise defaults to `POSTGRES_USER`. Credentials
-are used only for initial database creation; an existing PostgreSQL 18 data
-directory starts without them. A data directory from another PostgreSQL major
-version is rejected with an actionable error.
+`POSTGRES_USER` names the initial superuser and defaults to `postgres`.
+On first start, `POSTGRES_DB` defaults to `POSTGRES_USER` when unset or empty.
+The selected database is created with `POSTGRES_USER` as its owner, including
+when both names are equal. If the selected name is `postgres`, the existing
+`postgres` database is used and no extra database is created. Names `template0`
+and `template1` and names containing line breaks are rejected before cluster
+initialization.
+
+These variables and the credentials apply only to initialization. An existing
+PostgreSQL 18 data directory starts without credentials and does not create or
+re-create databases, even if `POSTGRES_USER` or `POSTGRES_DB` changes. A data
+directory from another PostgreSQL major version is rejected with an actionable error.
 
 Host network authentication is SCRAM-SHA-256. The development image does not
 provide a `trust` escape hatch for remote clients.
