@@ -29,10 +29,14 @@ limited to the container's `/tmp` Unix socket and is not a host/network escape
 hatch. Network passwords and every newly stored role password use
 SCRAM-SHA-256. The image exposes no `POSTGRES_HOST_AUTH_METHOD` option.
 
-`POSTGRES_USER` names the initial superuser and defaults to `postgres`;
-`POSTGRES_DB` optionally creates one database. Neither variable changes an
-existing cluster. Use PostgreSQL role administration for rotation and
-least-privilege application roles as shown in `DEPLOYMENT.md`.
+`POSTGRES_USER` names the initial superuser and defaults to `postgres`.
+On an empty data directory, `POSTGRES_DB` defaults to `POSTGRES_USER` when
+unset or empty. The selected database is created and owned by `POSTGRES_USER`,
+even when the names match, unless it is `postgres` (already created by
+`initdb`). `template0`, `template1`, and names containing line breaks are
+rejected before cluster initialization. Neither variable creates or re-creates
+a database in an existing cluster. Use PostgreSQL role administration for
+rotation and least-privilege application roles as shown in `DEPLOYMENT.md`.
 
 ## Configuration precedence
 

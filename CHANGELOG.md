@@ -10,6 +10,11 @@ but container releases use the upstream-derived format documented in
 
 ### Fixed
 
+- Create the application database when `POSTGRES_DB` defaults to or equals
+  `POSTGRES_USER`, owned by that role. Reuse `postgres`, reject template names
+  before initialization, and retain existing-data restart behavior. Cover
+  initialization and restart cases in native AMD64 and ARM64 smoke tests.
+
 - Regenerated both native RPM/source locks and refreshed the selected UBI base
   digests. Updated the util-linux family to 2.37.4-28.el9_9.1, expat to
   2.5.0-9.el9_9.4, and libxml2 to 2.9.13-18.el9_9.1, retaining PostgreSQL 18.6
