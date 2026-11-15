@@ -215,7 +215,7 @@ for scenario in unset equal different postgres quoted; do
             options+=(--env "POSTGRES_DB=${database}")
             ;;
         quoted)
-            user='app "owner'
+            user='app owner'
             database='app "database'
             options+=(--env "POSTGRES_DB=${database}")
             ;;
