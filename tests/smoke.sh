@@ -13,6 +13,8 @@ wrong_major="${prefix}-wrong-major"
 primary_volume="${prefix}-primary-data"
 arbitrary_volume="${prefix}-arbitrary-data"
 missing_volume="${prefix}-missing-data"
+initialization_containers=()
+initialization_volumes=()
 no_new_privileges="no-new-privileges:true"
 
 if grep -qi podman <<<"$("${runtime}" --version 2>&1)"; then
@@ -20,6 +22,10 @@ if grep -qi podman <<<"$("${runtime}" --version 2>&1)"; then
 fi
 
 cleanup() {
+    if test "${#initialization_containers[@]}" -gt 0; then
+        "${runtime}" rm --force --volumes "${initialization_containers[@]}" >/dev/null 2>&1 || true
+        "${runtime}" volume rm --force "${initialization_volumes[@]}" >/dev/null 2>&1 || true
+    fi
     "${runtime}" rm --force --volumes \
         "${primary}" "${restart}" "${arbitrary}" \
         "${missing_password}" "${wrong_major}" >/dev/null 2>&1 || true
@@ -44,11 +50,13 @@ run_restricted() {
 
 wait_for_postgresql() {
     local name="$1"
+    local user="${2:-postgres}"
+    local database="${3:-postgres}"
     local _
     for _ in {1..60}; do
         if "${runtime}" exec --env "PGPASSWORD=${password}" "${name}" \
             /usr/pgsql-18/bin/psql --quiet --host=127.0.0.1 \
-            --username=postgres --dbname=postgres --command='SELECT 1' \
+            --username="${user}" --dbname="${database}" --command='SELECT 1' \
             >/dev/null 2>&1; then
             return
         fi
@@ -96,9 +104,11 @@ assert_process_security() {
 sql() {
     local name="$1"
     local statement="$2"
+    local user="${3:-postgres}"
+    local database="${4:-postgres}"
     "${runtime}" exec --env "PGPASSWORD=${password}" "${name}" \
-        psql --host=127.0.0.1 --username=postgres \
-        --dbname=postgres --tuples-only --no-align --command="${statement}"
+        psql --host=127.0.0.1 --username="${user}" \
+        --dbname="${database}" --set=ON_ERROR_STOP=1 --tuples-only --no-align --command="${statement}"
 }
 
 test "$("${runtime}" image inspect --format '{{.Config.User}}' "${image}")" = "26:0"
@@ -184,5 +194,76 @@ run_restricted "${wrong_major}" "${primary_volume}"
 wait_for_failure "${wrong_major}"
 grep -Fq 'PGDATA major 17 is incompatible with PostgreSQL 18' \
     <<<"$("${runtime}" logs "${wrong_major}" 2>&1)"
+
+# Each case initializes a fresh volume with a non-default role, then replaces
+# the container without initialization credentials and checks persisted state.
+for scenario in unset equal different postgres quoted; do
+    name="${prefix}-db-${scenario}"
+    volume="${name}-data"
+    user=rauthy
+    database=rauthy
+    options=()
+    case "${scenario}" in
+        unset) ;;
+        equal) options+=(--env "POSTGRES_DB=${database}") ;;
+        different)
+            database=appdb
+            options+=(--env "POSTGRES_DB=${database}")
+            ;;
+        postgres)
+            database=postgres
+            options+=(--env "POSTGRES_DB=${database}")
+            ;;
+        quoted)
+            user='app "owner'
+            database='app "database'
+            options+=(--env "POSTGRES_DB=${database}")
+            ;;
+    esac
+    initialization_containers+=("${name}")
+    initialization_volumes+=("${volume}")
+    "${runtime}" volume create "${volume}" >/dev/null
+    run_restricted "${name}" "${volume}" --env "POSTGRES_USER=${user}" \
+        --env "POSTGRES_PASSWORD=${password}" "${options[@]}"
+    wait_for_postgresql "${name}" "${user}"
+    # Connect over authenticated TCP to the application database itself.
+    test "$(sql "${name}" 'SELECT current_database();' "${user}" "${database}")" = "${database}"
+    test "$(sql "${name}" 'SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = current_database();' \
+        "${user}" "${database}")" = "${user}"
+    expected_databases=4
+    if test "${database}" = postgres; then
+        expected_databases=3
+    fi
+    test "$(sql "${name}" 'SELECT count(*) FROM pg_database;' "${user}")" = "${expected_databases}"
+    sql "${name}" 'CREATE TABLE initialization_probe AS SELECT 42 AS value;' "${user}" "${database}" >/dev/null
+    "${runtime}" stop --time 30 "${name}" >/dev/null
+    test "$("${runtime}" inspect --format '{{.State.ExitCode}}' "${name}")" = 0
+    "${runtime}" rm "${name}" >/dev/null
+    run_restricted "${name}" "${volume}" --env "POSTGRES_USER=${user}" "${options[@]}"
+    wait_for_postgresql "${name}" "${user}" "${database}"
+    test "$(sql "${name}" 'SELECT value FROM initialization_probe;' "${user}" "${database}")" = 42
+    test "$(sql "${name}" 'SELECT count(*) FROM pg_database;' "${user}")" = "${expected_databases}"
+    "${runtime}" stop --time 30 "${name}" >/dev/null
+    test "$("${runtime}" inspect --format '{{.State.ExitCode}}' "${name}")" = 0
+    "${runtime}" rm "${name}" >/dev/null
+    echo "Database initialization and restart passed: ${scenario}"
+done
+
+for database in template0 template1 $'invalid\nname' $'invalid\rname'; do
+    name="${prefix}-db-invalid-${#initialization_containers[@]}"
+    volume="${name}-data"
+    initialization_containers+=("${name}")
+    initialization_volumes+=("${volume}")
+    "${runtime}" volume create "${volume}" >/dev/null
+    run_restricted "${name}" "${volume}" --env POSTGRES_USER=rauthy \
+        --env "POSTGRES_DB=${database}" --env "POSTGRES_PASSWORD=${password}"
+    wait_for_failure "${name}"
+    case "${database}" in
+        template*) expected_error='POSTGRES_DB must not be template0 or template1' ;;
+        *) expected_error='POSTGRES_DB must not contain line breaks' ;;
+    esac
+    grep -Fq "${expected_error}" <<<"$("${runtime}" logs "${name}" 2>&1)"
+    echo "Invalid database name rejected: ${expected_error}"
+done
 
 echo "PostgreSQL restricted-runtime scenario tests passed for ${image}"
