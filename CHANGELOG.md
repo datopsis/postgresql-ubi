@@ -29,8 +29,7 @@ but container releases use the upstream-derived format documented in
   CVE-2026-120145, CVE-2026-120146, CVE-2026-120147, CVE-2026-120148,
   CVE-2026-120149, CVE-2026-120150, CVE-2026-120151, CVE-2026-120152,
   CVE-2026-120153, CVE-2026-120154, CVE-2026-14661, CVE-2026-16237,
-  CVE-2026-16240, CVE-2026-18447, CVE-2026-6460, CVE-2026-6464,
-  CVE-2026-6467.
+  CVE-2026-16240, CVE-2026-18447, CVE-2026-6460, CVE-2026-6467.
 
 - Create the application database when `POSTGRES_DB` defaults to or equals
   `POSTGRES_USER`, owned by that role. Reuse `postgres`, reject template names
