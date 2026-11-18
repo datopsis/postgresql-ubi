@@ -94,7 +94,10 @@ def validate_locks(root: Path, postgresql: str, ubi_major: str, args: dict[str, 
             fail(f"{architecture} lock has the wrong architecture")
         if lock.get("postgresql_version") != postgresql:
             fail(f"{architecture} lock has the wrong PostgreSQL version")
-        if lock.get("postgresql_rpm_version") != expected_rpm:
+        architecture_rpm = inputs.get("architectures", {}).get(architecture, {}).get(
+            "postgresql_rpm_version", expected_rpm
+        )
+        if lock.get("postgresql_rpm_version") != architecture_rpm:
             fail(f"{architecture} lock has the wrong PostgreSQL RPM version")
         bases = lock.get("base_images")
         if not isinstance(bases, dict):
