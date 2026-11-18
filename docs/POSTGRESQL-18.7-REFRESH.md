@@ -76,4 +76,4 @@ The approved signing fingerprints are unchanged.
 No package names were added or removed. ARM64 retains `libatomic` as its sole
 extra package name; AMD64 has no unique package name. No mirror or cache was
 introduced. Offline assembly, runtime tests, and scanner policies are retained;
-the smoke assertion and update-test success message now expect 18.7.
+the smoke and minor-update version assertions now expect 18.7 (180007).
