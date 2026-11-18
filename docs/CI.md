@@ -23,6 +23,16 @@ It exports a never-started image with numeric ownership preserved, blocks tool
 and evidence failures, and retains findings without treating them as host,
 deployment, STIG, or compliance results. See [SCAP.md](SCAP.md).
 
+## Upstream artifact availability
+
+A lock pins an upstream URL and exact bytes; it does not guarantee that the
+vendor retains the file. PGDG can remove the previous minor release's RPMs
+when publishing a new PostgreSQL minor release. Acquisition then fails (for
+example, with HTTP 404), and main CI stays broken until reviewed lock inputs
+and both native closures are refreshed with the normal lock tooling. Offline
+assembly cannot substitute a different package. A mirror or cache is an owner
+decision; this repository does not add one.
+
 ## Local repository checks
 
 ```console

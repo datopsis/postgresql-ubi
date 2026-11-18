@@ -114,14 +114,21 @@ for untested operating-system locale definitions.
 
 Rollback means restoring the previous backup/snapshot with the previous image,
 or applying a reviewed forward fix. Do not assume an older PostgreSQL binary
-can safely open files after a newer minor has started them. The initial 18.6
+can safely open files after a newer minor has started them. The initial 18.7
 image has no earlier supported Datopsis digest. Native CI therefore uses the
 immutable Docker Official PostgreSQL 18.4 architecture digests as
 preserved-data compatibility fixtures, verifies their platform and version,
 takes a pre-update logical backup, adapts only the documented mount layout,
-starts 18.6, validates application data, and takes another dump. This is
+starts 18.7, validates application data, and takes another dump. This is
 development update evidence, not support for the official image or a
 substitute for repeating the procedure between Datopsis release digests.
+
+For the [18.7 update](https://www.postgresql.org/docs/release/18.7/), upstream
+requires no dump/restore from 18.x. Operators must review affected indexes for
+`REINDEX`, replace existing incremental-backup chains with a new full backup,
+and rebuild C extensions for the composite-type checks (some require source
+changes). Keep those checks enabled. Incremental backup products and extra
+extensions remain outside this image's first-release scope.
 
 ## Major upgrade decision
 

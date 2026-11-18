@@ -32,7 +32,7 @@ not a supported release.
 | Docker | Compatible for CI behavior | Native Docker CI passes; this does not establish production equivalence with the planned Podman baseline. |
 | OpenShift arbitrary UID | Preview/unqualified | The entrypoint is tested with an arbitrary UID in group 0; restricted-SCC deployment qualification remains open. |
 | TLS | Compatible in native Docker CI | The mounted-certificate TLS 1.2/1.3 profile, trust/hostname/time failures, clear-text rejection, and rotation/rollback pass on AMD64 and ARM64; target Podman/platform qualification remains open. |
-| Logical backup and restore | Compatible in native Docker CI | Custom-format dump, isolated restore, row/content validation, and an 18.4-to-18.6 update fixture pass on AMD64 and ARM64; scheduled target-platform restoration remains open. |
+| Logical backup and restore | Compatible in native Docker CI | Custom-format dump, isolated restore, row/content validation, and an 18.4-to-18.7 update fixture pass on AMD64 and ARM64; scheduled target-platform restoration remains open. |
 | Physical backup, WAL archive, and PITR products | Unsupported for v1 | Operators retain ownership; product-specific qualification is deferred. |
 | PostgreSQL major-version upgrades | Unsupported for v1 | Other-major data directories are rejected; operators must plan pg_upgrade or logical dump/restore. |
 | Replication, pooling, and high availability | Unsupported for v1 | These require separate topology, availability, and recovery qualification. |

@@ -105,6 +105,20 @@ class ReleaseTagTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)["commit_tag"].split("-")[0], "sha")
 
+    def test_native_rpm_override_requires_matching_lock(self):
+        inputs = json.loads((self.root / "artifacts/lock-inputs.json").read_text())
+        inputs["architectures"] = {"arm64": {"postgresql_rpm_version": "18.6-2PGDG.rhel9.9"}}
+        self.write_json("artifacts/lock-inputs.json", inputs)
+        self.assert_rejected()
+        lock = json.loads((self.root / "artifacts/locks/arm64.json").read_text())
+        lock["postgresql_rpm_version"] = "18.6-2PGDG.rhel9.9"
+        self.write_json("artifacts/locks/arm64.json", lock)
+        result = self.validate()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        # The override must never permit an unmatched build on the other platform.
+        self.write_json("artifacts/locks/amd64.json", dict(lock, architecture="amd64"))
+        self.assert_rejected()
+
     def test_rejects_malformed_mutable_and_impossible_dates(self):
         for tag in (
             "latest",

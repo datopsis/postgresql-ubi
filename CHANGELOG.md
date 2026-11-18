@@ -10,6 +10,28 @@ but container releases use the upstream-derived format documented in
 
 ### Fixed
 
+- Update PostgreSQL to 18.7 with native PGDG builds `1PGDG.rhel9.9` (AMD64)
+  and `2PGDG.rhel9.9` (ARM64), regenerated NEVRA/SHA-256 binary/source locks,
+  and a refreshed UBI RPM closure. Preserve offline acquisition/assembly and
+  all vulnerability and runtime checks. Record architecture-specific RPM
+  releases in image labels and explain disappearing upstream URLs in CI docs.
+  [PostgreSQL 18.7 release notes](https://www.postgresql.org/docs/release/18.7/)
+  list these security fixes:
+  CVE-2026-116303, CVE-2026-116304, CVE-2026-116306, CVE-2026-116307,
+  CVE-2026-116308, CVE-2026-116309, CVE-2026-116310, CVE-2026-116311,
+  CVE-2026-116312, CVE-2026-116313, CVE-2026-116314, CVE-2026-116315,
+  CVE-2026-116316, CVE-2026-116317, CVE-2026-116318, CVE-2026-116319,
+  CVE-2026-116320, CVE-2026-116321, CVE-2026-116322, CVE-2026-116323,
+  CVE-2026-116325, CVE-2026-116326, CVE-2026-116327, CVE-2026-116328,
+  CVE-2026-116329, CVE-2026-116330, CVE-2026-116331, CVE-2026-116332,
+  CVE-2026-116333, CVE-2026-116335, CVE-2026-116336, CVE-2026-120139,
+  CVE-2026-120141, CVE-2026-120142, CVE-2026-120143, CVE-2026-120144,
+  CVE-2026-120145, CVE-2026-120146, CVE-2026-120147, CVE-2026-120148,
+  CVE-2026-120149, CVE-2026-120150, CVE-2026-120151, CVE-2026-120152,
+  CVE-2026-120153, CVE-2026-120154, CVE-2026-14661, CVE-2026-16237,
+  CVE-2026-16240, CVE-2026-18447, CVE-2026-6460, CVE-2026-6464,
+  CVE-2026-6467.
+
 - Create the application database when `POSTGRES_DB` defaults to or equals
   `POSTGRES_USER`, owned by that role. Reuse `postgres`, reject template names
   before initialization, and retain existing-data restart behavior. Cover

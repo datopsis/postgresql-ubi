@@ -132,7 +132,7 @@ $RUNTIME exec postgresql sh -c \
 ```
 
 Expected results are UID `26`, GID `0`, `NoNewPrivs: 1`, an all-zero effective
-capability mask, core limit `0`, PostgreSQL 18.6, and an authenticated query.
+capability mask, core limit `0`, PostgreSQL 18.7, and an authenticated query.
 Inspect logs for errors and confirm that no credential value appears.
 
 ## 5. Deploy with an arbitrary UID
