@@ -6,7 +6,7 @@ container artifacts that this project intentionally publishes and supports.
 
 ## Supported product line
 
-The initial maintained product line is PostgreSQL 18 on UBI 9. PostgreSQL 18.6
+The initial maintained product line is PostgreSQL 18 on UBI 9. PostgreSQL 18.7
 is the initial build target, not a permanently fixed minor line. PostgreSQL's
 current minor release for major 18 should replace it after review, rebuild,
 testing, and release qualification.
@@ -32,11 +32,11 @@ Annotated Git tags and immutable GHCR image tags use:
 v<postgresql-version>-ubi<ubi-major>-r<YYYYMMDD>.<daily-sequence>
 ```
 
-For example, `v18.6-ubi9-r20260910.1` identifies:
+For example, `v18.7-ubi9-r20261118.1` identifies:
 
-- PostgreSQL 18.6;
+- PostgreSQL 18.7;
 - the UBI 9 runtime product line;
-- a Datopsis container release created on 2026-09-10 UTC; and
+- a Datopsis container release created on 2026-11-18 UTC; and
 - the first container release created on that UTC date.
 
 The example is illustrative and is not a published or supported release.
@@ -107,10 +107,10 @@ Every newly published image receives a new immutable release tag.
 The first release publishes only:
 
 - the complete immutable release tag, such as
-  `v18.6-ubi9-r20260910.1`; and
+  `v18.7-ubi9-r20261118.1`; and
 - an immutable `sha-<short-commit>` traceability tag.
 
-Mutable tags such as `latest`, `18`, or `18.6` are not initially published.
+Mutable tags such as `latest`, `18`, or `18.7` are not initially published.
 They may be introduced only after their movement, rollback, support, and
 consumer-notification behavior is documented. Controlled deployments use an
 image digest.

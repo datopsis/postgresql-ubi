@@ -9,13 +9,25 @@ dependency closure, checksums, source RPMs, and signing identity.
 
 An inspection on 2026-09-11 found that the public UBI 9.8 repositories expose
 PostgreSQL 13.23 but not the PostgreSQL 18 stream. The PGDG RHEL 9 repository
-exposes these PostgreSQL 18.6 packages for x86_64:
+was selected for the initial build. The current PostgreSQL 18.7 inputs use
+`18.7-1PGDG.rhel9.9` on x86_64 and `18.7-2PGDG.rhel9.9` on aarch64, selected
+from each architecture's primary repository metadata on 2026-11-18. All three
+seed packages (`postgresql18`, `postgresql18-libs`, `postgresql18-server`) use
+that architecture's release. The directory listing can lag primary metadata;
+the older aarch64 `1PGDG.rhel9.8` listing is not the newest candidate.
 
-```text
-postgresql18-0:18.6-1PGDG.rhel9.8.x86_64
-postgresql18-libs-0:18.6-1PGDG.rhel9.8.x86_64
-postgresql18-server-0:18.6-1PGDG.rhel9.8.x86_64
-```
+The visible x86_64 `18.7-10PGDG.rhel9.9` build belongs to the separate
+`babelfish_postgresql18` package family. It is not a higher release of the
+standard `postgresql18` package and is not selected for this image. The normal
+resolver installs the reviewed, checksum-pinned standard PostgreSQL seeds;
+it does not choose between unrelated package names. `postgresql18-contrib`
+is not in this image's existing closure and is not added by this refresh.
+
+Lock inputs may override `postgresql_rpm_version` per architecture when PGDG
+publishes different native build releases. Each rendered lock still requires
+an exact version/release for every PostgreSQL RPM. Offline assembly takes the
+RPM-version image label from that native lock, and release validation checks
+the corresponding architecture's selection.
 
 The observed PGDG repository key fingerprints were:
 

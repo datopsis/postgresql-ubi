@@ -17,7 +17,7 @@ the authority if this summary and a package checklist ever differ.
 
 - The repository and image are `datopsis/postgresql-ubi`, the maintained major
   line is PostgreSQL 18, and the current development baseline is PostgreSQL
-  18.6 on UBI 9 Minimal/Micro. The version is not frozen for release until
+  18.7 on UBI 9 Minimal/Micro. The version is not frozen for release until
   Package 7 reviews current upstream inputs.
 - Packages 1 through 5 are implemented and merged to `main`. Their merge
   commits are `dfce506` (Package 1, PR #3), `805d41d` (Package 2, PR #4),
@@ -343,7 +343,7 @@ database interface, security default, storage transition, and lifecycle path.
 **Completed 2026-09-11:** native AMD64 and ARM64 CI run
 [34647961464](https://github.com/datopsis/postgresql-ubi/actions/runs/34647961464)
 passed the restricted runtime, authentication/configuration, durable storage,
-resource exhaustion/recovery, PostgreSQL 18.4-to-18.6 preserved-data update,
+resource exhaustion/recovery, PostgreSQL 18.4-to-18.7 preserved-data update,
 TLS rotation/negative, vulnerability, SBOM, and repository gates at revision
 `9827bd94ce41c35796b7fa56bd2cae35b7347aa3`.
 
@@ -520,7 +520,7 @@ supported host, and every other platform claim is explicitly classified.
 - [ ] Review PostgreSQL release notes, security announcements, PGDG packaging,
   Red Hat errata, source RPMs, key status, UBI lifecycle, and why no newer
   relevant reviewed input is being selected.
-- [ ] For PostgreSQL 18.6, disposition every security and migration note,
+- [ ] For PostgreSQL 18.7, disposition every security and migration note,
   including the required configuration adjustments and data-cleanup checks,
   the `output_plugin_libraries` restriction, affected extension indexes, and
   upgrades from a release earlier than 18.2. Prove which notes apply to a fresh

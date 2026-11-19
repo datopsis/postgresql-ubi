@@ -11,7 +11,7 @@ labels, locks, SBOMs, scans, Sigstore bundles, and GitHub Release must identify
 one candidate. Consumers verify
 `ghcr.io/datopsis/postgresql-ubi@sha256:<digest>`; tags are discovery aids. The
 workflow creates only the full release tag and `sha-<12>` commit tag—never
-`latest`, `18`, or `18.6`.
+`latest`, `18`, or `18.7`.
 
 `scripts/release.py` rejects impossible or non-current UTC dates, a reused
 daily sequence, lightweight or moved tags, a commit outside `origin/main`, a

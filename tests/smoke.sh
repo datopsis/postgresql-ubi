@@ -117,7 +117,7 @@ test "$("${runtime}" image inspect --format '{{.Config.User}}' "${image}")" = "2
 run_restricted "${primary}" "${primary_volume}" \
     --env "POSTGRES_PASSWORD=${password}"
 wait_for_postgresql "${primary}"
-test "$(sql "${primary}" 'SHOW server_version;')" = "18.6"
+test "$(sql "${primary}" 'SHOW server_version;')" = "18.7"
 test "$(sql "${primary}" 'SHOW password_encryption;')" = "scram-sha-256"
 test "$(sql "${primary}" 'SHOW data_checksums;')" = on
 test "$(sql "${primary}" 'SHOW logging_collector;')" = off
