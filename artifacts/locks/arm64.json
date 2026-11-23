@@ -3,7 +3,7 @@
   "bundle_version": 1,
   "architecture": "arm64",
   "rpm_architecture": "aarch64",
-  "generated_at": "2026-11-18T04:43:34Z",
+  "generated_at": "2026-11-23T20:14:20Z",
   "postgresql_version": "18.7",
   "postgresql_rpm_version": "18.7-2PGDG.rhel9.9",
   "base_images": {
@@ -308,16 +308,16 @@
       "name": "expat",
       "epoch": 0,
       "version": "2.5.0",
-      "release": "9.el9_9.4",
+      "release": "9.el9_9.8",
       "architecture": "aarch64",
-      "nevra": "expat-0:2.5.0-9.el9_9.4.aarch64",
-      "filename": "expat-2.5.0-9.el9_9.4.aarch64.rpm",
-      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/e/expat-2.5.0-9.el9_9.4.aarch64.rpm",
+      "nevra": "expat-0:2.5.0-9.el9_9.8.aarch64",
+      "filename": "expat-2.5.0-9.el9_9.8.aarch64.rpm",
+      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/e/expat-2.5.0-9.el9_9.8.aarch64.rpm",
       "repository": "ubi-9-baseos-rpms",
-      "size": 123156,
-      "sha256": "bcaa948dd26957b4633325ad07beae7074cceab75ad9f1ff664c244ecb40ca78",
+      "size": 128203,
+      "sha256": "ff89a9d273790ed3623a3bc45484d819665503023df1157eb1a3e2bb0f7c1897",
       "signing_key_fingerprint": "567E347AD0044ADE55BA8A5F199E2F91FD431D51",
-      "source_rpm": "expat-2.5.0-9.el9_9.4.src.rpm"
+      "source_rpm": "expat-2.5.0-9.el9_9.8.src.rpm"
     },
     {
       "name": "filesystem",
@@ -518,16 +518,16 @@
       "name": "krb5-libs",
       "epoch": 0,
       "version": "1.21.1",
-      "release": "10.el9_8.1",
+      "release": "10.el9_9.2",
       "architecture": "aarch64",
-      "nevra": "krb5-libs-0:1.21.1-10.el9_8.1.aarch64",
-      "filename": "krb5-libs-1.21.1-10.el9_8.1.aarch64.rpm",
-      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/k/krb5-libs-1.21.1-10.el9_8.1.aarch64.rpm",
+      "nevra": "krb5-libs-0:1.21.1-10.el9_9.2.aarch64",
+      "filename": "krb5-libs-1.21.1-10.el9_9.2.aarch64.rpm",
+      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/k/krb5-libs-1.21.1-10.el9_9.2.aarch64.rpm",
       "repository": "ubi-9-baseos-rpms",
-      "size": 793631,
-      "sha256": "35ea4e07d704837be334a199e8deb950db2ac7e655b2edc578d0ac309d08ce59",
+      "size": 798086,
+      "sha256": "8b8952a66958c00efbc6f8cce14046c829f1f69b6409d0636d3fd26ab4893cc9",
       "signing_key_fingerprint": "567E347AD0044ADE55BA8A5F199E2F91FD431D51",
-      "source_rpm": "krb5-1.21.1-10.el9_8.1.src.rpm"
+      "source_rpm": "krb5-1.21.1-10.el9_9.2.src.rpm"
     },
     {
       "name": "libacl",
@@ -2363,61 +2363,61 @@
       "name": "systemd",
       "epoch": 0,
       "version": "252",
-      "release": "79.el9_9",
+      "release": "79.el9_9.1",
       "architecture": "aarch64",
-      "nevra": "systemd-0:252-79.el9_9.aarch64",
-      "filename": "systemd-252-79.el9_9.aarch64.rpm",
-      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/s/systemd-252-79.el9_9.aarch64.rpm",
+      "nevra": "systemd-0:252-79.el9_9.1.aarch64",
+      "filename": "systemd-252-79.el9_9.1.aarch64.rpm",
+      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/s/systemd-252-79.el9_9.1.aarch64.rpm",
       "repository": "ubi-9-baseos-rpms",
-      "size": 4146864,
-      "sha256": "be3394e595e19b1d5ecfc754c325e534a609fe2ffde4d9be96b453eb5b64e721",
+      "size": 4147496,
+      "sha256": "a7dc6e637c8454b0f2ad1184c1ff8c521e7f2f79dfa92fcd881a7c39eba2c577",
       "signing_key_fingerprint": "567E347AD0044ADE55BA8A5F199E2F91FD431D51",
-      "source_rpm": "systemd-252-79.el9_9.src.rpm"
+      "source_rpm": "systemd-252-79.el9_9.1.src.rpm"
     },
     {
       "name": "systemd-libs",
       "epoch": 0,
       "version": "252",
-      "release": "79.el9_9",
+      "release": "79.el9_9.1",
       "architecture": "aarch64",
-      "nevra": "systemd-libs-0:252-79.el9_9.aarch64",
-      "filename": "systemd-libs-252-79.el9_9.aarch64.rpm",
-      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/s/systemd-libs-252-79.el9_9.aarch64.rpm",
+      "nevra": "systemd-libs-0:252-79.el9_9.1.aarch64",
+      "filename": "systemd-libs-252-79.el9_9.1.aarch64.rpm",
+      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/s/systemd-libs-252-79.el9_9.1.aarch64.rpm",
       "repository": "ubi-9-baseos-rpms",
-      "size": 629822,
-      "sha256": "867fa806604bdf721ad4ee82908a2078ae42e20a32da86de88b47b71430dfe11",
+      "size": 630510,
+      "sha256": "885f7c5c0d724b93f5f6e0646135e45de1b7ded1845497061112fe3d8e75adc6",
       "signing_key_fingerprint": "567E347AD0044ADE55BA8A5F199E2F91FD431D51",
-      "source_rpm": "systemd-252-79.el9_9.src.rpm"
+      "source_rpm": "systemd-252-79.el9_9.1.src.rpm"
     },
     {
       "name": "systemd-pam",
       "epoch": 0,
       "version": "252",
-      "release": "79.el9_9",
+      "release": "79.el9_9.1",
       "architecture": "aarch64",
-      "nevra": "systemd-pam-0:252-79.el9_9.aarch64",
-      "filename": "systemd-pam-252-79.el9_9.aarch64.rpm",
-      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/s/systemd-pam-252-79.el9_9.aarch64.rpm",
+      "nevra": "systemd-pam-0:252-79.el9_9.1.aarch64",
+      "filename": "systemd-pam-252-79.el9_9.1.aarch64.rpm",
+      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/s/systemd-pam-252-79.el9_9.1.aarch64.rpm",
       "repository": "ubi-9-baseos-rpms",
-      "size": 248434,
-      "sha256": "7f54df47624ec7c68c6fdae65c502a2f744d817cbe5111705a8442ed3a4adfb5",
+      "size": 248855,
+      "sha256": "72f0c60a89b659a2d674fcc6d82026fa7d2c913cfc26b03a52065bd0e77e6220",
       "signing_key_fingerprint": "567E347AD0044ADE55BA8A5F199E2F91FD431D51",
-      "source_rpm": "systemd-252-79.el9_9.src.rpm"
+      "source_rpm": "systemd-252-79.el9_9.1.src.rpm"
     },
     {
       "name": "systemd-rpm-macros",
       "epoch": 0,
       "version": "252",
-      "release": "79.el9_9",
+      "release": "79.el9_9.1",
       "architecture": "noarch",
-      "nevra": "systemd-rpm-macros-0:252-79.el9_9.noarch",
-      "filename": "systemd-rpm-macros-252-79.el9_9.noarch.rpm",
-      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/s/systemd-rpm-macros-252-79.el9_9.noarch.rpm",
+      "nevra": "systemd-rpm-macros-0:252-79.el9_9.1.noarch",
+      "filename": "systemd-rpm-macros-252-79.el9_9.1.noarch.rpm",
+      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/s/systemd-rpm-macros-252-79.el9_9.1.noarch.rpm",
       "repository": "ubi-9-baseos-rpms",
-      "size": 41417,
-      "sha256": "601a5463e84ace10a8b696beb3816ef8bc7d20afb6fecb539f585b29e97ceabf",
+      "size": 41813,
+      "sha256": "07f7baa81b0ba437650f222813b0e8f316914d1b06440fa83b819a8c7e4bef6d",
       "signing_key_fingerprint": "567E347AD0044ADE55BA8A5F199E2F91FD431D51",
-      "source_rpm": "systemd-252-79.el9_9.src.rpm"
+      "source_rpm": "systemd-252-79.el9_9.1.src.rpm"
     },
     {
       "name": "tzdata",
@@ -2609,11 +2609,11 @@
       "sha256": "5c613445f928889a52a0a82f4ed866502e82c99b0c983024ab97421391abd061"
     },
     {
-      "filename": "expat-2.5.0-9.el9_9.4.src.rpm",
-      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/source/SRPMS/Packages/e/expat-2.5.0-9.el9_9.4.src.rpm",
+      "filename": "expat-2.5.0-9.el9_9.8.src.rpm",
+      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/source/SRPMS/Packages/e/expat-2.5.0-9.el9_9.8.src.rpm",
       "repository": "ubi-9-baseos-source-rpms",
-      "size": 8414151,
-      "sha256": "c461966c67935df3c01d4755d76b9b9ff8894936aaf99000716976ffad14acda"
+      "size": 8431764,
+      "sha256": "eab744300e98369808dc49c509237234da7ded9273e806b2bd29fb7a4f316b0b"
     },
     {
       "filename": "filesystem-3.16-5.el9.src.rpm",
@@ -2707,11 +2707,11 @@
       "sha256": "4f6fefbf0d004b23494fe18ccfff2b9151ea887a276c56a6f25ea597a250991c"
     },
     {
-      "filename": "krb5-1.21.1-10.el9_8.1.src.rpm",
-      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/source/SRPMS/Packages/k/krb5-1.21.1-10.el9_8.1.src.rpm",
+      "filename": "krb5-1.21.1-10.el9_9.2.src.rpm",
+      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/source/SRPMS/Packages/k/krb5-1.21.1-10.el9_9.2.src.rpm",
       "repository": "ubi-9-baseos-source-rpms",
-      "size": 8966024,
-      "sha256": "79d2d304f67abfe9034d75d56a2055ba12274b24eb9cb2ea2f88dbf124b24943"
+      "size": 9051812,
+      "sha256": "bf167a98f8d5d5e6bd5b2dfe1340e14a473e55ee47a609f55c5d73888dd222a8"
     },
     {
       "filename": "libcap-2.48-10.el9_8.1.src.rpm",
@@ -3239,11 +3239,11 @@
       "sha256": "96aaea75354d0c85176f47e96f2107de88db093bf31b4baf0abe73c36976526d"
     },
     {
-      "filename": "systemd-252-79.el9_9.src.rpm",
-      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/source/SRPMS/Packages/s/systemd-252-79.el9_9.src.rpm",
+      "filename": "systemd-252-79.el9_9.1.src.rpm",
+      "url": "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/source/SRPMS/Packages/s/systemd-252-79.el9_9.1.src.rpm",
       "repository": "ubi-9-baseos-source-rpms",
-      "size": 45061118,
-      "sha256": "ddda500164b45e4c4057c8f55d9c6addabb1867d12140f8a947e3ae29815d0cd"
+      "size": 45069139,
+      "sha256": "769a78a55d84d5c044904039375ff8936319ce6b4fede9e54d29f4920fe6c33b"
     },
     {
       "filename": "tzdata-2026f-1.el9_9.src.rpm",
